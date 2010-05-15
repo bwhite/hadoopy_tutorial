@@ -1,0 +1,1335 @@
+Robust Human Detection Under Occlusion by Integrating Face and Person Detectors
+William Robson Schwartz1 , Raghuraman Gopalan2 , Rama Chellappa2 , and Larry S. Davis1
+University of Maryland, Department of Computer Science College Park, MD, USA, 20742 University of Maryland, Department of Electrical and Computer Engineering College Park, MD, USA, 20742
+1
+
+2
+
+Abstract. Human detection under occlusion is a challenging problem in computer vision. We address this problem through a framework which integrates face detection and person detection. We ﬁrst investigate how the response of a face detector is correlated with the response of a person detector. From these observations, we formulate hypotheses that capture the intuitive feedback between the responses of face and person detectors and use it to verify if the individual detectors’ outputs are true or false. We illustrate the performance of our integration framework on challenging images that have considerable amount of occlusion, and demonstrate its advantages over individual face and person detectors.
+
+1
+
+Introduction
+
+Human detection (face and the whole body) in still images is of high interest in computer vision. However, it is a challenging problem due to the presence of variations in people’s poses, lighting conditions, inter- and intra- person occlusion, amongst others. Occlusion, in particular, poses a signiﬁcant challenge due to the large amount of variations it implies on the appearance of the visible parts of a person. There are many human detection algorithms in the literature. In general, they fall into two categories: subwindow-based and part-based approaches. In the former category, features extracted from subwindows located within a detection window are used to describe the whole body. Subwindow-based approaches can be based on diﬀerent types and combinations of features, such as histograms of oriented gradients (HOG) [1], covariance matrices [2], combination of several features [3], and multi-level versions of HOG [4]. On the other hand, part-based approaches split the body into several parts that are detected separately and, ﬁnally, the results are combined. For instance, Wu and Nevatia [5] use edgelet features and learn nested cascade detectors for each body part. Mikolajczyk et al. [6] divide the human body into seven parts, and for each part a cascade of detectors is applied. Shet and Davis [7] apply logical reasoning to exploit contextual information augmented by the output of low level detectors.
+
+2
+
+W. R. Schwartz, R. Gopalan, R. Chellappa, L. S. Davis
+
+Fig. 1. Image where occlusion is present and fusion of detectors can increase detection accuracy. Face of person b is occluded. Once the legs and torso are visible, results from a part-based person detector can be used to support that a human is present at that location. On the other hand, the legs of person c are occluded, in such a case, face detector results can be used to reason that there is a person at that particular location since the face of person c is perfectly visible.
+
+Subwindow-based person detectors present degraded performance when parts of the body are occluded; part-based approaches, on the other hand, are better suited to handle such situations because they still detect the un-occluded parts. However, since part-based detectors are less speciﬁc than whole body detectors, they are less reliable and usually generate large numbers of false positives. Therefore, to obtain more accurate results it is important to aggregate information obtained from diﬀerent sources with a part-based detector. For this, we incorporate a face detector. Face detection is an extensively studied problem, and the survey paper [8] provides a comprehensive description of various approaches to this problem. For example, Viola and Jones [9] use large training exemplar databases of faces and non-faces, extract feature representations from them, and then use boosting techniques to classify regions as face or non-face. Other algorithms, for instance Rowley et al. [10], uses a neural network to learn how the appearance of faces differ from non-faces using training exemplars, and then detect faces by seeing how well the test data ﬁts the learned model. Another class of approaches, exempliﬁed by Heisele et al. [11], uses a part-based framework by looking for prominent facial components (eyes, nose etc), and then uses their spatial relationship to detect faces. Although such methods are more robust to image deformations and occlusions when compared with holistic approaches, the choice of feature representations and accurate characterization of the relationships between the facial components is still a challenge. The question that arises naturally is then, how to fuse these two sources to improve overall detection performance. Speciﬁcally, is it possible to use the response proﬁles of the two separate detectors, to reinforce each other, as well as provide a basis to resolve conﬂicts? This is the question we address in our work. Figure 1 motivates the utility of combining face and person detectors. First,
+
+Lecture Notes in Computer Science
+
+3
+
+while the lower half of person c is occluded, the face detector can still detect the face of the person, whereas the person detector might fail. Nevertheless, we can try to explain the response of the person detector based on the response of the face detector, and conclude that a person is present. Another case is the reverse situation such as b and d in Figure 1 whose faces are partially occluded while the body parts are completely visible. Such situations occur often in real-world scenarios, and motivates exploring feedback between face and people detectors.
+
+2
+
+Face and Person Detection
+
+In this section we give a synopsis of our algorithms for face detection and person detection. We also provide detection results of applying the individual algorithms on standard datasets, showing that these detectors individually achieve results comparable to state-of-art methods. However, a point to keep in mind is that these standardized datasets do not have considerable amounts of occlusion, which is the main problem that we address in our work. 2.1 Face Detection
+
+We use a feature-based approach to detect faces from still images. Our approach, motivated by [12], is based on using an optimal step edge operator to detect shapes (here, the facial contours are modeled as ellipses). The crux of the algorithm is then to obtain the edge map of the image using a derivative of double exponential (DODE) operator, and ﬁt various sized ellipses to the edge map. Image regions that have high response to ellipse ﬁtting signify locations that likely contain faces. We then conduct post-processing on these short-listed regions by computing three diﬀerent cues - color [13], histogram of oriented gradients [1], and eigenfaces [14], and combine the three feature channels using support vector machines [15] to decide whether a face is present or not. The motivation behind the choice of these descriptors is: (i) the human face has a distinct color pattern which can be characterized by ﬁtting Gaussian models for the color pattern of face regions, and non-face regions; (ii) the histogram of oriented gradients capture the high interest areas in faces that are rich in gradient information (eyes, nose and mouth) that are quite robust to pose variations, and (iii) eigenfaces captures the holistic appearance of the human face. These three feature channels capture a mix of global and local information about the face, and are robust to variations in pose. Our algorithm was tested on the MIT+CMU face dataset [10]. This dataset has two parts. The ﬁrst part (A) has 130 frontal face images with 507 labeled faces, the second part (B) has 208 images containing 441 faces of both frontal and proﬁle views. The results of our algorithm are presented in Figure 2(a). Most other algorithms that are evaluated on this dataset do not provide the full ROC, but rather provide certain points on the ROC. Since Viola and Jones [9] quote their ROC for part A of this dataset, we have compared our ROC with
+
+4
+0.95 0.9
+
+W. R. Schwartz, R. Gopalan, R. Chellappa, L. S. Davis
+Comparison of face detection algorithms
+Comparison of face detection algorithms
+0.5 0.9 PLS detector Tuzel et al. [2] Dalal & Triggs [1] Maji et al. [4]
+
+Detection Error Tradeoff
+
+correct detection rate
+
+correct detection rate
+
+0.2 0.85
+
+0.85 0.8 0.75 0.7 0.65 0.6 0 50 Viola Jones detector [9] on dataset A our face detector on dataset A Our face detector on dataset B 100 150 200 250 300
+
+miss rate
+Our face detection algorithm Viola Jones [9] face detector 50 100 150 200
+
+0.8 0.75 0.7 0.65 0.6 0
+
+0.1 0.05
+
+0.02 0.01 −6 10
+
+10
+
+−5
+
+10
+
+−4
+
+10
+
+−3
+
+10
+
+−2
+
+10
+
+−1
+
+# false positives
+
+# false positives
+
+false positives rate
+
+(a) MIT+CMU dataset
+
+(b) Maritime dataset
+
+(c) INRIA person database
+
+Fig. 2. Experimental results for face and person detection.
+
+theirs; even otherwise, it can be observed that our performance is comparable to the ROC points of other algorithms (like Rowley et al. [10]). Since we are interested in detecting partially occluded faces we also compare our approach to the OpenCV implementation of Viola and Jones [9] method on the internally collected maritime dataset in Figure 2(b). 2.2 Person Detection
+
+For person detection we use a method that combines HOG [1] and features extracted from co-occurrence matrices [16]. For each detection window, features extracted from HOG and co-occurrence matrices are concatenated and projected onto a set of latent vectors estimated by the partial least squares (PLS) method [17] in order to reduce the dimensionality of the input vector. The vector obtained after dimensionality reduction is used as the feature vector to describe the current detection window. Finally, the feature vector is classiﬁed by a quadratic classiﬁer as either human or non-human sample. As a result, we obtain a probability estimate. Figure 2(c) shows comparisons using the INRIA person dataset [1]. Like face detection, the person detection approach used also achieves results comparable to state-of-art person detectors [1, 2, 4]. Since part-based approaches are better suited to handle situations of occlusion, we split the person detector into seven diﬀerent detectors, which consider the following combinations of regions of the body: (1) top, (2) top-torso, (3) top-legs, (4) torso, (5) torso-legs, (6) legs, and (7) full body, as illustrated in Figure 3. Therefore, at each position in the image the person detector estimates a set of seven probabilities. The training for these detectors was performed using the training set of the INRIA person dataset. As discussed in the literature survey, part-based approaches for person detection have been employed previously. Here, we use a part-based approach in tandem with a face detector creating a small number of intuitive case-based models for overall person detection. Although the face and person detectors present results comparable to the state of the art on these datasets, these algorithms face diﬃculties when there is signiﬁcant occlusion. To this end, we explore how to overcome this problem by combining the responses of the individual detectors.
+
+Lecture Notes in Computer Science
+
+5
+
+(1) top
+
+(7) full body
+
+(4) torso
+
+(2) top + torso
+
+(5) torso + legs
+
+(3) top + legs (6) legs
+
+Fig. 3. Parts of a detection window used to train multiple detectors.
+
+3
+
+Integrating Face and Person Detection
+
+In this section we present our algorithm for integrating the response proﬁles of face and person detectors. We model observations of the individual detectors, and generate hypotheses that capture intuitive relationships between the responses of the face detector and the person detector. Speciﬁcally, we describe a set of situations where the output of one detector can be logically combined with the other detector’s output to eliminate false alarms or conﬁrm true positives. 3.1 Modeling the Response Proﬁles of the Individual Detectors
+
+To integrate person and face detectors’ output we ﬁrst create models according to the probability proﬁle resulting from individual detectors (the seven probabilities from part-composition person detector and one from the face detector). For the person detector, we summarize the probability proﬁle obtained by the seven probabilities into a set of four models that inherently capture situations in which various combinations of face and person parts are detected with high probability. Speciﬁcally, Model M1 : all body parts are visible Model M2 : top is visible, torso and legs may or may not be visible. This corresponds to the typical situation in which a person’s legs are occluded by some ﬁxed structure like a desk, or the railing of a ship. Model M3 : top is invisible, whereas torso and legs are visible Model M4 : all body parts are invisible Given the set of seven probabilities estimated by the person part-combination detectors, we deﬁne probability intervals that characterize each model. The estimation of the intervals for models M1 and M4 can be done automatically by evaluating probability of training samples from standard person datasets. However, probability intervals for models M2 and M3 only can be estimated if a training set containing partially occluded people were available. Due to the absence of such dataset, we deﬁne the probability intervals for M2 and M3 manually. Figure 4 shows the probability intervals for each model. A model Mi ﬁts a detection window if all seven estimated probabilities fall inside the probability intervals deﬁned by Mi . We also estimate a degree of ﬁt of a detection window to each model by simply counting the number of probability intervals satisﬁed by the response proﬁle:
+
+6
+1
+
+W. R. Schwartz, R. Gopalan, R. Chellappa, L. S. Davis
+
+torso+legs
+
+torso+legs
+
+torso+legs
+
+top+torso
+
+top+torso
+
+top+torso
+
+top+legs
+
+top+legs
+
+top+legs
+
+legs
+
+legs
+
+full body
+
+full body
+
+legs
+
+(a) M1 : all parts are vis- (b) M2 : top part is visi- (c) M2 : top part is visiible ble and torso is visible ble and legs are visible
+
+torso+legs
+
+torso+legs
+
+top+torso
+
+top+torso
+
+top+legs
+
+top+legs
+
+legs
+
+full body
+
+legs
+
+(d) M3 : top part is in- (e) M4 : all parts are invisible visible Fig. 4. Models designed considering the output proﬁle of the person detector. The x-axis has the seven detectors and the y-axis the probability interval for each one according to the model. Note that M2 has two sub-cases, shown in (b) and (c).
+7
+
+f (Mi ) =
+j=1
+
+1 if ui,j ≤ Pj ≤ li,j 0 otherwise
+
+full body
+
+torso
+
+torso
+
+top
+
+top
+
+11111111111 11111111111 00000000000 00000000000 1 0 1 0 1 0 1 11 11 11 0 00 00 00 11111111111 11111111111 00000000000 00000000000 11 11 11 1 00 00 00 0 1 0 1 0 11 11 00 00 11 11 1 00 00 0 1 11 0 00 1 0 1 0 11111111111 11111111111 00000000000 00000000000 1 11 11 11 0 00 00 00 111 11 11 11 1 11 11 11 000 00 00 00 0 00 00 00 111 11 11 11 000 00 00 00 11111111111 11111111111 00000000000 00000000000 11 11 1 11 11 11 00 00 0 00 00 00 1 0 1 0 1 11 0 00 1 0 111 11 000 00 111 11 11 11 000 00 00 00 1 0 1 0 11111111111 11111111111 00000000000 00000000000 1 0 1 11 11 11 0 00 00 00 111 000 111 11 11 11 000 00 00 00 1 0 1 0 111111111111 111111111111 000000000000 000000000000 1 0 1 11 11 11 0 00 00 00 111 000 111 11 11 11 000 00 00 00
+1 1 probability 0 1 0 0 1 0 probability
+
+full body
+
+torso
+
+torso
+
+torso
+
+top
+
+top
+
+top
+
+11111111111 11111111111 11111111111 00000000000 00000000000 00000000000 1 0 1 11 11 11 0 00 00 00 1 0 1 0 111 11 11 11 1 11 11 11 1 11 11 11 000 00 00 00 0 00 00 00 0 00 00 00 111 11 000 00 111 000 11 00 1 0 11111111111 11111111111 11111111111 00000000000 00000000000 00000000000 1 11 11 11 0 00 00 00 1 0 111 11 11 11 1 11 11 11 1 11 11 11 000 00 00 00 0 00 00 00 0 00 00 00 111 11 000 00 111 000 1 0 1 0 1 0 11 11 1 11 11 11 00 00 0 00 00 00 1 11 11 11 0 00 00 00 11111111111 1 11 00000000000 0 00 111 11 11 11 11111111111 1 11 11 11 000 00 00 00 00000000000 0 00 00 00 111 11 11 000 00 00 111 000 11 00 1 0 11 11111111111 00 00000000000 11111111111 1 00000000000 0 11111111111 1 00000000000 0 1 0 1 0 1 0 1 0 1 0 11 11 11111111111 00 00 00000000000 11 00 11 11 1 11 11 11 00 00 0 00 00 00 1 0 1 0 1 0 11111111111 11111111111 11111111111 00000000000 00000000000 00000000000 1 0 1 0 11 11 111111111111 00 00 000000000000 1 0 11111111111 1 11 11 00000000000 0 00 00 11111111111 1 00000000000 0 1 0 1 0 11 11 1 11 11 00 00 0 00 00
+1 1 probability probability 0 1 0 0 1 0 0 1 0 probability
+
+(1)
+
+where Pj denotes the probability estimated by the j-th detector, ui,j is the upper bound for the j-th interval deﬁned for Mi and li,j denotes the lower bound. Therefore, we can rank the models according to how well they ﬁt a given detection window. We say that a model Mi has a rank higher than Mj when f (Mi ) > f (Mj ). For the face detector, the observations are characterized by the probability values indicating the presence of face for a given detection window. According to this probability we deﬁne three models. We say that a face is present if the probability exceeds a certain threshold (model F1 ). We also consider the case when the probability is smaller than the threshold but not negligible (i.e. face might be partially occluded), we refer to this as model F2 . Model F2 is interesting when the person detector gives a response that supports the low (but not negligible) conﬁdence of the face detector. Finally, we say that a sample ﬁts model F3 if the probability of face detector is very low. 3.2 Generating Hypotheses to Integrate Detectors
+
+Now that we have designed models according to the response proﬁles to capture occlusion situations, we create a set of hypotheses (rules) to characterize the
+
+Lecture Notes in Computer Science
+
+7
+
+relation between the detector responses so that these diﬀerent sources of information can be used to verify each other’s output. We separate the possibilities into ﬁve diﬀerent hypotheses. The ﬁrst two hypotheses describe the scenario where the person detector (PD) is used to verify the output of the face detector (FD), and the remaining three hypotheses deal with the alternate scenario of using face detector to verify the person detector outputs. The hypotheses are described in the form of conditional rules as follows. H1 : [(f (M1 ) ∧ f (M2 )) > (f (M3 ) ∧ f (M4 ))|F1 ] Given that the face detector provides high response for a detection window, we look at the models that characterize the person detector output. Since the face is visible, the output of PD should better ﬁt models M1 or M2 than M3 and M4 since we expect the top (head and shoulder) features to be detected by the person detector. If that is the case, then PD output veriﬁes that the FD output is correct. Thus, a person is present at that location. H2 : [(f (M3 ) ∨ f (M4 )) > (f (M1 ) ∧ f (M2 ))|F1 ] The alternate case is, given high response for the face detector, if the output of PD ﬁts either M3 or M4 , then PD indicates that the face is not visible, and hence the output of the FD is a false alarm. H3 : [(F1 |(f (M1 ) ∨ f (M2 )) > (f (M3 ) ∧ f (M4 ))] Given that the rank of M1 or M2 is greater than M3 , if FD gives a high response, then the face detector is reinforcing the output of the person detector. Thus, we conclude that a person is present at the corresponding location. H4 : [(F2 |f (M3 ) > (f (M1 ) ∧ f (M2 ) ∧ f (M4 ))] A slightly diﬀerent case from H3 is when FD has low response, but still has some probability higher than 0 but not high enough to conclude the presence of face. In this case, if for the person detector the rank of M3 is higher than M1 , M2 , and M4 , then we still decide that there is a person whose face is partially occluded. This is because M3 captures the situation where the face is occluded, while the torso and legs are visible. H5 : [F3 |(f (M1 ) ∨ f (M2 ) ∨ f (M3 )) > f (M4 )]: This ﬁnal hypothesis deals with the case where the output of person detector ﬁts either M1 , M2 , or M3 , and the probability outputted by the face detector is negligible, so that it cannot come under H4. In such a case, since the face is completely invisible, we decide that the PD output is a false alarm. Essentially, the above hypotheses are built on the fact that the presence of the face implies the presence of a person and vice-versa. We do need some conﬁdence value for the presence of face to make decisions on the output of the person detector. This is based on our observation that the presence of just the torso and legs with no information regarding the face is not a strong cue to detect a person. This condition gives rise to many false alarms.
+
+4
+
+Experimental Results
+
+In this section, we demonstrate with experiments how our integration framework improves detection under occlusion, as well as reduces the false alarms. We tested
+
+8
+
+W. R. Schwartz, R. Gopalan, R. Chellappa, L. S. Davis
+
+(a)
+
+(b)
+
+(c)
+
+(d)
+
+(e)
+
+(f)
+
+Fig. 5. Results on images from maritime dataset (better visualized in colors).
+
+our algorithm on challenging images taken from an internally collected maritime dataset. It contains images of 3008 × 2000 pixels, which is suitable for face and person detection, unlike standard datasets used for person detection, which in general contain images with resolution too low to detect faces. This dataset is a good test-bed since it provides challenging conditions wherein the individual face/person detector might fail, thereby emphasizing the need to fuse information obtained by these detectors. We now present several situations where the integration framework helps to detect humans. In the image shown in Figure 5(b) a person detector would fail to detect people seated since the lower body is occluded. However, our framework combines face information with the presence of the top part of the body (head and shoulders) captured by the person detector. Therefore, it concludes that a person is present. Additionally, Figures 5(c), (e), and (f) contain people who are partially occluded. Such conditions would reduce signiﬁcantly the probabil-
+
+Lecture Notes in Computer Science
+Detection Error Tradeoff
+1 0.5 person detection − single detector face detection − single detector proposed framework
+
+9
+
+0.2
+
+miss rate
+
+0.1 0.05
+
+0.02 0.01 −5 10
+
+10
+
+−4
+
+10
+
+−3
+
+10
+
+−2
+
+10
+
+−1
+
+false positives rate
+
+Fig. 6. Detection error tradeoﬀ comparing the integration to individual face and person detectors. The proposed framework outperforms the individual detectors for all points on the curve.
+
+ity estimated by an independent person detector, whereas the integration helps resolve this problem. Next, if the face is partially occluded, then the person detector output will belong to model M3 , whereas face detector’s output will have some small value that is not very high and not negligible either. In this case, the person detector results can be used to identify the presence of the face. For example, Figures 5(d) and (f) contain people whose faces are occluded. In these cases a face detector would fail to give a high response, but the proposed framework overcomes this problem by aggregating information from body parts. Essentially, since we are using two separate detectors, if the observations of the person detection and face detection provide conﬂicting information, then our framework mitigates false positives. A typical example is when hypothesis H2 is satisﬁed, which can be used to correct the false alarm of the face detector, and when hypothesis H5 is satisﬁed, that helps in reducing the false alarms of the person detector. Additionally, if both individual detectors denote the presence of a person, detection is more reliable than when relying on only one detector. We tested our algorithm on 20 images containing 126 people. Figure 6 presents the detection error tradeoﬀ of our integration method and compares its results to individual detectors. It can be seen that the use of the proposed method results in a substantial improvement in detection accuracy/false alarm suppression. To generate the curve for the our algorithm, we ﬁx the threshold for the face detector and for the person detector we measure how well each model ﬁts a sample by  |Pj − ui,j |  1 g(Mi ) = |P − li,j | 7 j=1  j  0,
+7
+
+if Pj > ui,j if Pj < li,j . otherwise
+
+(2)
+
+With this equation we obtain values of g(Mi ) for every sample. Then, varying a threshold value from zero to one we are able to evaluate which hypotheses are satisﬁed at each step.
+
+10
+
+W. R. Schwartz, R. Gopalan, R. Chellappa, L. S. Davis
+
+5
+
+Conclusions
+
+We have described a framework that combines the observations of face and person detector into diﬀerent models, and makes decisions based on the hypotheses derived from those models. We then demonstrated our algorithm on several challenging images with considerable occlusion, which illustrates the advantages of exploiting feedback between the response proﬁles of face and person detectors.
+
+Acknowledgements
+This research was partially supported by an ONR MURI Grant N00014-0810638. W.R. Schwartz acknowledges “Coordena¸˜o de Aperfei¸oamento de Pesca c soal de N´ Superior” (CAPES - Brazil, grant BEX1673/04-1). ıvel
+
+References
+1. Dalal, N., Triggs, B.: Histograms of oriented gradients for human detection. CVPR 1 (2005) 886–893 vol. 1 2. Tuzel, O., Porikli, F., Meer, P.: Human detection via classiﬁcation on riemannian manifolds. CVPR (2007) 1–8 3. Wu, B., Nevatia, R.: Optimizing discrimination-eﬃciency tradeoﬀ in integrating heterogeneous local features for object detection. CVPR (2008) 1–8 4. Maji, S., Berg, A., Malik, J.: Classiﬁcation using intersection kernel support vector machines is eﬃcient. CVPR (2008) 1–8 5. Wu, B., Nevatia, R.: Detection of multiple, partially occluded humans in a single image by bayesian combination of edgelet part detectors. ICCV (2005) 90–97 6. Mikolajczyk, K., Schmid, C., Zisserman, A.: Human detection based on a probabilistic assembly of robust part detectors. In: ECCV. (2004) 69–81 7. Shet, V., Neumann, J., Ramesh, V., Davis, L.: Bilattice-based logical reasoning for human detection. CVPR (2007) 1–8 8. Yang, M., Kriegman, D., Ahuja, N.: Detecting Faces in Images: A Survey. Pattern Analysis and Machine Intelligence, IEEE Transactions on (2002) 34–58 9. Viola, P., Jones, M.: Robust Real-Time Face Detection. International Journal of Computer Vision 57 (2004) 137–154 10. Rowley, H., Baluja, S., Kanade, T.: Neural network-based face detection. Pattern Analysis and Machine Intelligence, IEEE Transactions on 20 (1998) 23–38 11. Heisele, B., Serre, T., Poggio, T.: A Component-based Framework for Face Detection and Identiﬁcation. IJCV 74 (2007) 167–181 12. Moon, H., Chellappa, R., Rosenfeld, A.: Optimal edge-based shape detection. Image Processing, IEEE Transactions on 11 (2002) 1209–1227 13. Hsu, R., Abdel-Mottaleb, M., Jain, A.: Face detection in color images. Pattern Analysis and Machine Intelligence, IEEE Transactions on 24 (2002) 696–706 14. Belhumeur, P., Hespanha, J., Kriegman, D.: Eigenfaces vs. Fisherfaces: Recognition Using Class Speciﬁc Linear Projection. PAMI (1997) 711–720 15. Osuna, E., Freund, R., Girosit, F.: Training support vector machines: an application to face detection. In: CVPR. (1997) 130–136 16. Haralick, R., Shanmugam, K., Dinstein, I.: Texture features for image classiﬁcation. IEEE Transactions on Systems, Man, and Cybernetics 3 (1973) 17. Wold, H.: Partial least squares. In Kotz, S., Johnson, N., eds.: Encyclopedia of Statistical Sciences. Wiley, New York (1985) 581–591
+
+Human Detection Using Partial Least Squares Analysis
+William Robson Schwartz, Aniruddha Kembhavi, David Harwood, Larry S. Davis University of Maryland, A.V.Williams Building, College Park, MD 20742
+schwartz@cs.umd.edu, anikem@umd.edu, harwood@umiacs.umd.edu, lsd@cs.umd.edu
+
+Abstract
+Signiﬁcant research has been devoted to detecting people in images and videos. In this paper we describe a human detection method that augments widely used edge-based features with texture and color information, providing us with a much richer descriptor set. This augmentation results in an extremely high-dimensional feature space (more than 170,000 dimensions). In such high-dimensional spaces, classical machine learning algorithms such as SVMs are nearly intractable with respect to training. Furthermore, the number of training samples is much smaller than the dimensionality of the feature space, by at least an order of magnitude. Finally, the extraction of features from a densely sampled grid structure leads to a high degree of multicollinearity. To circumvent these data characteristics, we employ Partial Least Squares (PLS) analysis, an efﬁcient dimensionality reduction technique, one which preserves signiﬁcant discriminative information, to project the data onto a much lower dimensional subspace (20 dimensions, reduced from the original 170,000). Our human detection system, employing PLS analysis over the enriched descriptor set, is shown to outperform state-of-the-art techniques on three varied datasets including the popular INRIA pedestrian dataset, the low-resolution gray-scale DaimlerChrysler pedestrian dataset, and the ETHZ pedestrian dataset consisting of full-length videos of crowded scenes.
+
+Figure 1. Image demonstrating the performance of our system in a complex scene. The image (689 × 480 pixels) is scanned at 10 scales to search for humans of multiple sizes. We achieve minimal false alarms even though the number of detection windows is 44, 996 (best visualized in color).
+
+1. Introduction
+Effective techniques for human detection are of special interest in computer vision since many applications involve people’s locations and movements. Thus, signiﬁcant research has been devoted to detecting, locating and tracking people in images and videos. Over the last few years the problem of detecting humans in single images has received considerable interest. Variations in illumination, shadows, and pose, as well as frequent inter- and intra-person occlusion render this a challenging task. Figure 1 shows an image of a particularly challenging scene with a large number of persons, overlaid with the results of our system. Two main approaches to human detection have been explored over the last few years. The ﬁrst class of meth-
+
+ods consists of a generative process where detected parts of the human body are combined according to a prior human model. The second class of methods considers purely statistical analysis that combine a set of low-level features within a detection window to classify the window as containing a human or not. The method presented in this paper belongs to the latter category. Dalal and Triggs [5] proposed using grids of Histograms of Oriented Gradient (HOG) descriptors for human detection, and obtained good results on multiple datasets. The HOG feature looks at the spatial distribution of edge orientations. However, this may ignore some other useful sources of information, thus leading to a number of false positive detections such as the ones shown in Figure 2. Our analysis shows that information such as the homogeneity of human clothing, color, particularly skin color, typical textures of human clothing, and background textures complement the HOG features very well. When combined, this richer set of descriptors helps improve the detection results signiﬁcantly. A consequence of such feature augmentation is an extremely high dimensional feature space (more than 170, 000 dimensions), rendering many classical machine learning techniques such as Support Vector Machines (SVM) intractable. In contrast, the number of samples in our training dataset is much smaller (almost 20 times smaller than
+
+Figure 2. False positives obtained when only edge information (using HOG features) is considered.
+
+the dimensionality). Furthermore, our features are extracted from neighboring blocks within a detection window, which increases the multicollinearity of the feature set. The nature of our proposed feature set makes an ideal setting for a statistical technique known as Partial Least Squares (PLS) regression [23]. PLS is a class of methods for modeling relations between sets of observations by means of latent variables. Although originally proposed as a regression technique, PLS can be also be used as a class aware dimensionality reduction tool. We use PLS to project our high dimensional feature vectors onto a subspace of dimensionality as low as 20. In such low dimensional spaces, standard machine learning techniques such as quadratic classiﬁers and SVMs can be used for our classiﬁcation task. Our proposed human detection approach outperforms state-of-the-art approaches on multiple standard datasets. Since the number of detection windows within an image is very high (tens of thousands for a 640 × 480 image scanned at multiple scales), it is crucial to obtain good detection results at very small false alarm rates. On the popular INRIA person dataset [5], we obtain superior results at false alarm rates as low as 10−5 and 10−6 false positives per window (FPPW). We also test on the ETHZ pedestrian dataset [7] consisting of full-length videos captured in crowded scenes. Even though we do not retrain our human detector using the provided training set (but use the detector trained on the INRIA training set), our method outperforms other approaches that utilize many more sources of information such as depth maps, ground-plane estimation, and occlusion reasoning [7]. Finally, we also demonstrate our method on detecting humans at very low resolutions (18 × 36 pixels) using the DaimlerChrysler dataset [18].
+
+Using low-level features such as intensity, gradient, and spatial location combined by a covariance matrix, Tuzel et al. [22] improve the results obtained by Dalal and Triggs. Since the covariance matrices do not lie in a vector space, the classiﬁcation is performed using LogitBoost classiﬁers combined with a rejection cascade designed to accommodate points lying on a Riemannian manifold. Mu et al. [17] propose a variation of local binary patterns to overcome some drawbacks of HOG, such as lack of color information. Chen and Chen [4] combine intensity-based rectangle features and gradient-based features using a cascaded structure for detecting humans. Applying combination of edgelets [25], HOG descriptors [5], and covariance descriptors [22], Wu and Nevatia [26] describe a cascade-based approach where each weak classiﬁer corresponds to a subregion within the detection window from which different types of features are extracted. Dollar et al. [6] propose a method to learn classiﬁers for individual components and combine them into an overall classiﬁer. The work of Maji et al. [14] uses features based on a multi-level version of HOG and histogram intersection kernel SVM based on the spatial pyramid match kernel [12]. Employing part-based detectors, Mikolajczyk et al. [15] divide the human body into several parts and apply a cascade of detectors for each part. Shet and Davis [20] apply logical reasoning to exploit contextual information, augmenting the output of low-level detectors. Based on deformable parts, Felzenszwalb et al. [9] simultaneously learn part and object models and apply them to person detection, among other applications. Tran and Forsyth [21] use an approach that mixes a part-based method and a subwindowbased method into a two stage method. Their approach ﬁrst estimates a possible conﬁguration of the person inside the detection window, and then extracts features for each part resulting from the estimation. Similarly, Lin and Davis [13] propose a pose-invariant feature extraction method for simultaneous human detection and segmentation, where descriptors are computed adaptively based on human poses.
+
+3. Proposed Method
+Previous studies [14, 22, 26] have shown that signiﬁcant improvement in human detection can be achieved using different types (or combinations) of low-level features. A strong set of features provides high discriminatory power, reducing the need for complex classiﬁcation methods. Humans in standing positions have distinguishing characteristics. First, strong vertical edges are present along the boundaries of the body. Second, clothing is generally uniform. Clothing textures are different from natural textures observed outside of the body due to constraints on the manufacturing of printed cloth. Third, the ground is composed mostly of uniform textures. Finally, discriminatory color information is found in the face/head regions. Thus, edges, colors and textures capture important cues for discriminating humans from the background. To capture these cues, the low-level features we employ are the original HOG descriptors with additional color information,
+
+2. Related Work
+The work of Dalal and Triggs [5] is notable because it was the ﬁrst paper to report impressive results on human detection. Their work uses HOG as low-level features, which were shown to outperform features such as wavelets [16], PCA-SIFT [11] and shape contexts [2]. To improve detection speed, Zhu et al. [28] propose a rejection cascade using HOG features. Their method considers blocks of different sizes, and to train the classiﬁer for each stage, a small subset of blocks is selected randomly. Also based on HOG features, Zhang et al. [27] propose a multi-resolution framework to reduce the computational cost. Begard et al. [1] address the problem of real-time pedestrian detection by considering different implementations of the AdaBoost algorithm.
+
+called color frequency, and texture features computed from co-occurrence matrices. To handle the high dimensionality resulting from the combination of features, PLS is employed as a dimensionality reduction technique. PLS is a powerful technique that provides dimensionality reduction for even hundreds of thousands of variables, accounting for class labels in the process. The latter point is in contrast to traditional dimensionality reduction techniques such as Principal Component Analysis (PCA). The steps performed in our detection method are the following. For each detection window in the image, features extracted using original HOG, color frequency, and co-occurrence matrices are concatenated and analyzed by the PLS model to reduce dimensionality, resulting in a low dimensional vector. Then, a simple and efﬁcient classiﬁer is used to classify this vector as either a human or non-human. These steps are explained in the following subsections.
+
+color frequency increases detection performance. Once the feature extraction process is performed for all blocks inside a detection window di , features are concatenated creating an extremely high-dimensional feature vector vi . Then, vi is projected onto a set of weight vectors (discussed in the next section), which results in a low dimensional representation that can be handled by classiﬁcation methods.
+
+3.2. Partial Least Squares for Dimension Reduction
+Partial least squares is a method for modeling relations between sets of observed variables by means of latent variables. The basic idea of PLS is to construct new predictor variables, latent variables, as linear combinations of the original variables summarized in a matrix X of descriptor variables (features) and a vector y of response variables (class labels). While additional details regarding PLS methods can be found in [19], a brief mathematical description of the procedure is provided below. Let X ⊂ Rm denote an m-dimensional space of feature vectors and similarly let Y ⊂ R be a 1-dimensional space representing the class labels. Let the number of samples be n. PLS decomposes the zero-mean matrix X (n × m) and zero-mean vector y (n × 1) into X = TPT + E y = U qT + f where T and U are n × p matrices containing p extracted latent vectors, the (m × p) matrix P and the (1 × p) vector q represent the loadings and the n × m matrix E and the n × 1 vector f are the residuals. The PLS method, using the nonlinear iterative partial least squares (NIPALS) algorithm [23], constructs a set of weight vectors (or projection vectors) W = {w1 , w2 , . . . wp } such that [cov(ti , ui )]2 = max [cov(Xwi , y)]2
+|wi |=1
+
+3.1. Feature Extraction
+We decompose a detection window, di , into overlapping blocks and extract a set of features for each block to construct the feature vector vi . To capture texture, we extract features from cooccurrence matrices [10], a method widely used for texture analysis. Co-occurrence matrices represent second order texture information - i.e., the joint probability distribution of gray-level pairs of neighboring pixels in a block. We use 12 descriptors: angular second-moment, contrast, correlation, variance, inverse difference moment, sum average, sum variance, sum entropy, entropy, difference variance, difference entropy, and directionality [10]. Co-occurrence features are useful in human detection since they provide information regarding homogeneity and directionality of patches. In general, a person wears clothing composed of homogeneous textured regions and there is a signiﬁcant difference between the regularity of clothing texture and background textures. Edge information is captured using histograms of oriented gradients. HOG captures edge or gradient structures that are characteristic of local shape [5]. Since the histograms are computed for regions of a given size within the detection window, HOG is robust to some location variability of body parts. HOG is also invariant to rotations smaller than the orientation bin size. The last type of information captured is color. Although colors may not be consistent due to variability in clothing, certain dominant colors are more often observed in humans, mainly in the face/head regions. In order to incorporate color we used the original HOG to extract a descriptor called color frequency. In HOG, the orientation of the gradient for a pixel is chosen from the color band corresponding to the highest gradient magnitude. Some color information is captured by the number of times each color band is chosen. Therefore, we construct a three bin histogram that tabulates the number of times each color band is chosen. In spite of its simplicity, experimental results have shown that
+
+where ti is the i-th column of matrix T , ui the i-th column of matrix U and cov(ti , ui ) is the sample covariance between latent vectors ti and ui . After the extraction of the latent vectors ti and ui , the matrix X and vector y are deﬂated by subtracting their rank-one approximations based on ti and ui . This process is repeated until the desired number of latent vectors had been extracted. The dimensionality reduction is performed by projecting the feature vector vi , extracted from a detection window di , onto the weight vectors W = {w1 , w2 , . . . wp }, obtaining the latent vector zi (1 × p) as a result. This vector is used in classiﬁcation. The difference between PLS and PCA is that the former creates orthogonal weight vectors by maximizing the covariance between elements in X and y. Thus, PLS not only considers the variance of the samples but also considers the class labels. Fisher Discriminant Analysis (FDA) is, in this way, similar to PLS. However, FDA has the limitation that
+
+after dimensionality reduction, there are only c − 1 meaningful latent variables, where c is the number of classes being considered. Additionally, when the number of features exceeds the number of samples, the covariance estimates do not have full rank and the weight vectors cannot be extracted.
+
+4. Experiments
+We now present experiments to evaluate several aspects of our proposed approach. First, we demonstrate the need for dimensionality reduction and the advantages of using PLS for this purpose. Second, we evaluate the features used in our system. Third, we compare various classiﬁers that can be used to classify the data in the low dimensional subspace. Fourth, we discuss the computational cost of our method. Finally, we compare the proposed system to state-of-the-art algorithms on several datasets considering cropped as well as full images. Experimental Setup. For co-occurrence feature extraction we use block sizes of 16 × 16 and 32 × 32 with shifts of 8 and 16 pixels, respectively. We work in the HSV color space. For each color band, we create four co-occurrence matrices, one for each of the (0◦ , 45◦ , 90◦ , and 135◦ ) directions. The displacement considered is 1 pixel and each color band is quantized into 16 bins. 12 descriptors mentioned earlier are then extracted from each co-occurrence matrix. This results in 63, 648 features. We calculate HOG features similarly to Zhu et al. [28], where blocks with sizes ranging from 12 × 12 to 64 × 128 are considered. In our conﬁguration there are 2, 748 blocks. For each block, 36 features are extracted, resulting in a total of 98, 928 features. In addition, we use the same set of blocks to extract features using the color frequency method. This results in three features per block, and the total number of resulting features is 8, 244. Aggregating across all three feature channels, the feature vector describing each detection window contains 170, 820 elements. We estimate the parameters of our system using a 10-fold cross-validation procedure on the training dataset provided by INRIA Person Dataset [5]. The INRIA person dataset provides a training dataset containing 2416 positive samples of size 64 × 128 pixels and images containing no humans, used to obtain negative exemplars. We sample this set to obtain our validation set containing 2000 positive samples and 10000 negative samples. In sections 4.1 to 4.4 our experiments are performed using the INRIA person dataset. Experimental results using INRIA Person Dataset are presented using detection error tradeoff (DET) curves on log-log scales. The x-axis corresponds to false positives per window (FPPW), deﬁned by FalsePos/(TrueNeg + FalsePos) and the y-axis shows the miss rate, deﬁned by FalseNeg/(FalseNeg + TruePos). To clarify the results shown throughout the paper, curves where the lowest FPPW is 10−4 are obtained using the training data, while curves where the lowest FPPW is 10−6 are obtained using the testing data. All experiments were conducted on an Intel Xeon 5160, 3 GHz dual core processor with 8GB of RAM running Linux operating system.
+
+3.3. Speed Issues
+Although detection results can be improved by utilizing overlapping blocks for low-level feature extraction within the detection window, the dimensionality of the feature vector becomes extremely high. As a result, the speed of the human detector decreases signiﬁcantly due to the time needed to extract features and project them. To overcome this problem, we employ a two-stage approach. In a fast ﬁrst stage, based on a small number of features, the majority of detection windows (those with low probability of containing humans) are discarded. The remaining windows are evaluated during a second stage where the complete set of features allows challenging samples to be correctly classiﬁed. The reduced set of features used during the ﬁrst stage is obtained by selecting representative blocks within the detection window. We use a PLS-based feature selection method called variable importance on projection (VIP) [24] to do this. VIP provides a score for each feature, so that it is possible to rank the features according to their predictive power in the PLS model (the higher the score the more importance a feature presents). VIP for the j-th feature is deﬁned as
+p p 2 2 bk wjk / k=1 k=1
+
+VIPj =
+
+m
+
+b2 k
+
+where m denotes the number of features, wjk is the j-th element of vector wk , and bk is the regression weight for the k-th latent variable, bk = uT tk . k The speed improvements are twofold: (i) reducing the overall number of feature computations; (ii) reducing the time to create the data structure for a block, i.e. computing a co-occurrence matrix from which features are extracted. If features were selected individually, then a data structure might need to be constructed for a block to compute only one feature. To avoid that, we select features based on blocks. This way, data structures for a block are only built if several features within the block present some importance. To obtain the relative discriminative power among blocks we build a PLS model for each block, from which only the ﬁrst latent variable is considered (since PLS considers class labels, the ﬁrst latent variable can be used as a clue about how well that block contributes to the detection). A global PLS model is built using as input only the ﬁrst latent variable of every block. Then, VIP scores are computed with respect to this PLS model, in this way, blocks can be ranked according to their importance in detection. Finally, the features used in the ﬁrst stage of our approach are those computed from blocks having high rank.
+
+4.1. Dimensionality Reduction
+PLS+QDA Vs SVM. We ﬁrst examine the feasibility of applying support vector machines (SVM) directly on
+
+First two dimensions for PCA
+0.03 0.03 0.02 second dimension 0.01 0 −0.01 −0.02 −0.03 −0.02
+
+First two dimensions for PLS
+
+0.02 second dimension
+
+0.01
+
+0
+
+−0.01
+
+non−human human −0.03 −0.02 −0.01 0 first dimension 0.01 0.02
+
+non−human human −0.01 0 0.01 first dimension 0.02 0.03
+
+−0.02 −0.04
+
+(a) PCA - ﬁrst two dimensions
+Detection Error Tradeoff
+0.5 10 20 30 50 80 100 120 140 160 180 200
+
+(b) PLS - ﬁrst two dimensions
+Detection Error Tradeoff
+0.5 2 4 10 15 20 25 30 35 40 60
+
+0.2 0.1
+
+0.2 0.1 miss rate 0.05
+
+0.05
+
+0.02 0.01
+
+0.02 0.01
+
+10
+
+−4
+
+10
+
+−3
+
+10
+
+−2
+
+10
+
+−1
+
+false positive per window (FPPW)
+
+10
+
+−4
+
+10 10 false positive per window (FPPW)
+
+−3
+
+−2
+
+10
+
+−1
+
+(c) PCA - cross-validation
+
+(d) PLS - cross-validation
+
+Figure 3. Comparison of PCA and PLS for dimensionality reduction. (a-b) projection of the ﬁrst two dimensions of the training samples for one of the models learned in the cross-validation. (cd) DET curves according to the number of dimensions used to train the classiﬁer (best visualized in color).
+
+performance of the system drops when the number of latent variables is increased beyond 20. This can be attributed to overﬁtting of the data caused by using a larger number of latent variables. The results achieved while using the ﬁrst 20 latent variables are the best results obtained over both subspaces (0.8% miss rate at 10−4 FPPW). The best performance on the PCA subspace is obtained for a dimensionality of 180 (1.8% miss rate at 10−4 FPPW). As the dimensionality of the subspace increases, the time required to project the high dimensional feature vectors onto the low dimensional space also increases. On our computer, projecting the feature vector for a single window onto a 180 dimensional PCA subspace takes 0.0264 seconds while it takes 0.0032 seconds to project onto the 20 dimensional PLS subspace. Since an image contains several thousand windows, a computational cost of 0.0264 seconds/window is substantially worse than that for PLS. Thus, in addition to the superior performance, the computational cost of projection makes PLS more suitable for our application than PCA. Figure 3(a) and (b) show the training dataset projected onto the ﬁrst two dimensions for PLS and PCA. PLS clearly achieves better class separation than PCA.
+
+the high dimensional feature space (170, 820 features per sample). Table 1 shows the comparison between time required to train a linear SVM and the time required to train a PLS model along with a Quadratic Discriminant Analysis (QDA) model (we use the QDA classiﬁer, but in later subsections we provide a comparison to other classiﬁers as well). We used the LIBSVM [3] package for this purpose. As the number of training samples is increased, the training time also increases. For more than 1800 samples we were unable to train a linear SVM since the procedure ran out of memory. In addition, the computational cost to learn a PLS model and train a QDA classiﬁer is an order of magnitude smaller than the cost for training an SVM. These results indicate that for such a high dimensional space, it is more suitable to project the data onto a low dimensional subspace and then learn a classiﬁer.
+# samples 200 600 1000 1400 1800 2200 11370 PLS + QDA 23.63 62.62 97.38 135.81 174.57 213.93 813.03 SVM 131.72 733.63 1693.50 2947.51 4254.63 -
+
+Miss Rate
+
+4.2. Feature Evaluation
+Comparing features. Figure 4(a) shows the results of the three classes of features used in our system as well as the combined performance. We show results combining the HOG and color frequency features to demonstrate the positive contribution of the color features. A signiﬁcant improvement is achieved when all features are combined. Analysis of the PLS Weight Vectors. In this experiment, we perform an analysis of the contribution of each feature channel based on the weights of the PLS weight vectors used to project the features onto the low dimensional subspace. We use the same idea as described in Section 3.3. For a given block in the detection window, we create a PLS model for each feature channel. Then, using only the ﬁrst latent variable for every block, we learn a global PLS model. Figure 5 shows the weights for the ﬁrst ﬁve projection vectors of this global PLS model. The features considered are HOG, co-occurrence extracted from color bands H, S and V, and the color frequency. Figure 5 shows how each feature channel (edge, texture, color) provides information from different regions within the detection window. This supports our claim that the considered features complement each other, leading to an improvement over single-feature-based methods. For example, the ﬁrst weight vector of the HOG feature set captures information about the body shape due to the presence of edges. Co-occurrence matrix features from color band H extract information around the body silhouette. Color bands S and V provide information about the head and homogeneous parts inside the body, respectively. Except for the ﬁrst weight vector, color frequency features are able to identify regions located in the head due to similarity of the dominant colors in that region (skin color).
+
+Table 1. Time, in seconds, to train SVM and PLS + QDA models. The number of features per sample is 170,820. The training time increases with an increase in the number of training samples.
+
+PLS Vs PCA. We now establish a baseline using Principal Component Analysis (PCA) to perform linear dimensionality reduction and compare its results to PLS. Figures 3(c) and (d) show the DET curves obtained for a QDA classiﬁer in the PCA subspace as well as in the PLS subspace. It is interesting to note that while the best results are obtained by using the ﬁrst 20 PLS latent variables, the
+
+Detection Error Tradeoff
+0.5 co−occurrence HOG + color frequency HOG all features combined
+
+FPPW vs. Miss Rate
+0.5 QDA LDA Logistic Regression Linear SVM Kernel SVM 0.5
+
+Detection Error Tradeoff
+full set of features for all detection windows two−stage approach 0.2
+
+0.2
+
+0.2 0.1
+
+miss rate
+
+miss rate
+
+miss rate
+−4 −3 −2 −1
+
+0.1
+
+0.1
+
+0.05
+
+0.05
+
+0.05
+
+0.02
+0.02
+
+0.01
+
+0.02
+
+0.01 −6 10
+
+10
+
+−5
+
+10
+
+−4
+
+10
+
+−3
+
+10
+
+−2
+
+10
+
+−1
+
+10
+
+10
+
+10
+
+10
+
+0.01 −6 10
+
+10
+
+−5
+
+10
+
+−4
+
+10
+
+−3
+
+10
+
+−2
+
+10
+
+−1
+
+false positives per window (FPPW)
+
+false positives per window (FPPW)
+
+false positives per window (FPPW)
+
+(a)
+
+(b)
+
+(c)
+
+Figure 4. (a) results obtained by using different features and combination of all three feature channels used by this work; (b) comparison of several classiﬁcation methods for the low dimensional PLS subspace; (c) results after adding two stages compared to results obtained without speed optimization.
+
+tures computed in the ﬁrst stage, we rank blocks according to their VIP scores and then select only those features in blocks with higher rankings. Using 10-fold cross-validation in the training set, we select a subset of blocks containing 3, 573 features per detection window, together with a probability threshold to decide whether a detection window needs to be considered for the second stage. It is important to note that the use of the ﬁrst stage alone achieves poor results for low false alarm rates. Therefore, for the detection windows not discarded in the ﬁrst stage (approximately 3% for the INRIA person dataset), the complete feature set is computed. For the testing set of the INRIA person dataset, the results shown in Figure 4(c) indicate no degradation in performance at low false alarm rates when the two-stage approach is used, as compared to computing the full set of features for all detection windows. After speeding the process up using our two-stage method, we were able to process 2929 detection windows per second.
+
+4.5. Evaluation and Comparisons
+In this section we evaluate the proposed system on different datasets and compare it to state-of-the-art methods. INRIA Person Dataset. The INRIA person dataset [5] provides both training and testing sets containing positive samples of size 64 × 128 pixels and negatives images (containing no humans). To estimate weight vectors (PLS model) and train the quadratic classiﬁer we employ the following procedure. First, all 2416 positive training samples and 5000 of the negative detection windows, sampled randomly from training images, are used. Once the ﬁrst model is created, we use it to classify negative windows in the training set. The misclassiﬁed windows are added into the 5000 negative windows and a new PLS model and new classiﬁer parameters are estimated. This process is repeated a few times and takes approximately one hour. Our ﬁnal PLS model considers 8954 negative and 2416 positive samples, using 20 weight vectors (as discussed in section 4.1). Figure 6(a) compares results obtained by the proposed approach to methods published previously. Our results were obtained using 1126 positive testing samples and by shifting the detection windows by 8 pixels in the negative testing images, all of which are available in the dataset. While we were able to run the implementations for methods [5, 22], curves for methods [6, 13, 14, 26] were obtained from their
+
+Figure 5. Weight vectors for different features within the detection window. Red indicates high importance, blue low (the plots are in the same scale and normalized to interval [0, 1]).
+
+4.3. Classiﬁcation in Low Dimensional Space
+To evaluate the classiﬁcation in the low dimensional subspace, we compare the performance of several classiﬁers using the 10-fold cross-validation described earlier. Figure 4(b) shows the results. According to the results, QDA classiﬁer, kernel SVM and linear SVM achieved comparable performance in low dimensional subspace. Due to its simplicity, we have chosen to use QDA in our system. PLS tends to produce weight vectors that provide a good separation of the two classes for the human detection problem, as shown in Figure 3(b). This enables us to use simple classiﬁers in the low dimensional subspace.
+
+4.4. Computational Cost
+We accelerate the process using the two-stage approach described in Section 3.3. To reduce the number of fea-
+
+INRIA Pedestrian Dataset
+Detection Error Tradeoff
+0.5 1
+
+DaimlerChrysler Dataset
+Receiver Operating Characteristic
+1 0.9 0.8 0.8 0.7 0.6 0.6
+
+ETHZ Pedestrian Dataset
+Seq. #1 (999 frames, 5193 annotations)
+1
+
+Seq. #2 (450 frames, 2359 annotations)
+1 0.9 0.8 0.7 0.6
+
+Seq. #3 (354 frames, 1828 annotations)
+0.9 0.8 0.7 0.6
+
+Performance Evaluation
+
+0.2
+
+0.1
+
+detection rate
+
+miss rate
+
+our approach Lin & Davis [13] Tuzel et al. [22] Dalal & Triggs [5] Maji et al. [14] Wu, Nevatia [26] Dollar et al. [6]
+
+Ess et al. [7] our method Ess et al. [8]
+
+Ess et al. [7] our method
+
+Ess et al. [7] our method
+
+recall
+
+recall
+
+recall
+
+0.5 0.4 0.3
+
+0.5 0.4 0.3 0.2 0.1
+
+0.5 0.4 0.3 0.2 0.1
+
+0.05
+
+0.4
+
+0.02
+
+0.2
+
+our approach Maji et al. [14] Munder, Gavrila [18]
+0 0.05 0.1 0.15 0.2
+
+0.2 0.1 0 0 0.5 1 1.5 2 2.5 3 3.5 4 4.5 5
+
+0.01 −6 10
+
+10
+
+−5
+
+10
+
+−4
+
+10
+
+−3
+
+10
+
+−2
+
+10
+
+−1
+
+0
+
+0
+
+false positives per window (FPPW )
+
+false positive rate
+
+0
+
+0.5
+
+1
+
+1.5
+
+2
+
+2.5
+
+3
+
+3.5
+
+4
+
+4.5
+
+5
+
+0
+
+0
+
+0.5
+
+1
+
+1.5
+
+2
+
+2.5
+
+3
+
+3.5
+
+4
+
+4.5
+
+5
+
+false positives per image (FPPI)
+
+false positives per image (FPPI)
+
+false positives per image (FPPI)
+
+Example True Detections
+
+(a)
+
+(b)
+
+(c)
+
+(d)
+
+(e)
+
+Figure 6. Evaluation of our method on multiple pedestrian datasets. First row shows performance and comparisons with state-of-the-art methods. Second row shows some sample true detections for each dataset (best visualized in color).
+
+reported results. The PLS approach outperforms all methods in regions of low false alarm rates, i.e. 5.8% miss rate at 10−5 FPPW and 7.9% miss rate at 10−6 FPPW. DaimlerChrysler Pedestrian Dataset. This dataset provides grayscale samples of size 18 × 36 pixels [18]. We adapt our feature extraction methods for these image characteristics as follows. For co-occurrence feature extraction, we use block sizes of 8 × 8 and 16 × 16 with shifts of 2 pixels for both. Co-occurrence matrices are estimated using the brightness channel quantized into 16 bins. For HOG feature extraction, we adopt the same approach used for the INRIA person dataset; however, block sizes now range from 8 × 8 to 18 × 36. Due to the lack of color information, the color frequency feature cannot be considered in this experiment. The DaimlerChrysler dataset is composed of ﬁve disjoint sets, three for training and two for testing. To obtain results that can be compared to those presented by Maji et al. [14] and by Munder and Gavrila [18], we report results by training on two out of three training sets at a time. Therefore, we obtain six curves from which the conﬁdence interval of the true mean detection rate is given by the t(α/2,N −1) distribution with desired conﬁdence of 1 − α = 0.95 and N = 6. The boundaries of this interval are approximated by y ± 1.05s, where y and s denote the estimated mean and standard deviation, respectively [18]. Figure 6(b) compares results obtained by the proposed method to results reported in [14, 18]. In contrast to previous graphs, this shows detection rates instead of miss rates on the y-axis and both axes are shown using linear scales. Similar to experiments conducted on the INRIA person dataset, the results obtained with the proposed method show improvements in regions of low false alarm rates. ETHZ Dataset. We evaluate our method for un-cropped full images using the ETHZ dataset [7]. This dataset provides four video sequences, one for training and three for testing (640×480 pixels at 15 frames/second). Even though a training sequence is provided, we do not to use it; instead we use the same PLS model and QDA parameters learned on the INRIA training dataset. This allows us to evalu-
+
+ate the generalization capability of our method to different datasets. For this dataset we use false positives per image (FPPI) as the evaluation metric, which is more suitable for evaluating the performance on full images [21]. Using the same evaluation procedure described in [7] we obtain the results shown in Figure 6(c), (d) and (e) for the testing sequences provided. We use only the images provided by the left camera and perform the detection for each single image at 11 scales without considering any temporal smoothing. We do not train our detector on the provided training set and we do not use any additional cues such as depth maps, ground-plane estimation, and occlusion reasoning, all of which are used by [7]. Yet, our detector outperforms the results achieved by [7] in all three video sequences. The work by Ess et al. [8] also considers sequence #1 in their experiments, so we have added their results in Figure 6(c). Even though [8] uses additional cues such as tracking information, our method, trained using the training set of INRIA dataset, achieves very similar detection results. Additional Set of Images. We present some results in Figure 7 for a few images obtained from INRIA testing dataset and Google. These results were also obtained using the same PLS model and QDA parameters learned on the INRIA training dataset. We scan each image at 10 scales. Despite the large number of detection windows considered, the number of false alarms produced is very low.
+
+5. Conclusions
+We have proposed a human detection method using a richer descriptor set including edge-based features, texture measures and color information, obtaining a signiﬁcant improvement in results. The augmentation of these features generates a very high dimensional space where classical machine learning methods are intractable. The characteristics of our data make an ideal setting for applying PLS to obtain a much lower dimensional subspace where we use simple and efﬁcient classiﬁers. We have tested our approach
+
+(a) 640 × 480 (41,528 det. windows)
+
+(b) 1632 × 1224 (389,350 det. windows)
+
+(c) 1600 × 1200 (373,725 det. windows)
+
+Figure 7. Results obtained from images containing people of different sizes and backgrounds rich in edge information. The image size and the total number of detection windows considered are indicated in the caption (best visualized in color).
+
+on a number of varied datasets, demonstrated its good generalization capabilities and shown it to outperform state-ofthe-art methods that use additional cues.
+
+Acknowledgements
+This research was partially supported by the ONR MURI grant N00014-08-10638 and the ONR surveillance grant N00014-09-10044. W. R. Schwartz acknowledges “Coordenacao de Aperfeicoamento de Pessoal de N´vel Su¸˜ ¸ ı perior” (CAPES - Brazil, grant BEX1673/04-1). The authors also thank Ryan Farrell for his useful comments.
+
+References
+[1] J. Begard, N. Allezard, and P. Sayd. Real-time human detection in urban scenes: Local descriptors and classiﬁers selection with adaboost-like algorithms. In CVPR Workshops, 2008. [2] S. Belongie, J. Malik, and J. Puzicha. Matching Shapes. In ICCV 2001, volume 1, pages 454–461 vol.1, 2001. [3] C.-C. Chang and C.-J. Lin. LIBSVM: a library for support vector machines, 2001. Software available at www.csie.ntu.edu.tw/ cjlin/libsvm. [4] Y.-T. Chen and C.-S. Chen. Fast human detection using a novel boosted cascading structure with meta stages. Image Processing, IEEE Trans. on, 17(8):1452–1464, 2008. [5] N. Dalal and B. Triggs. Histograms of Oriented Gradients for Human Detection. In CVPR 2005, 2005. [6] P. Dollar, B. Babenko, S. Belongie, P. Perona, and Z. Tu. Multiple Component Learning for Object Detection. In ECCV 2008, pages 211–224, 2008. [7] A. Ess, B. Leibe, and L. V. Gool. Depth and appearance for mobile scene analysis. In ICCV, October 2007. [8] A. Ess, B. Leibe, K. Schindler, and L. Gool. A mobile vision system for robust multi-person tracking. CVPR, 2008. [9] P. Felzenszwalb, D. McAllester, and D. Ramanan. A discriminatively trained, multiscale, deformable part model. CVPR, pages 1–8, June 2008. [10] R. Haralick, K. Shanmugam, and I. Dinstein. Texture Features for Image Classiﬁcation. IEEE Transactions on Systems, Man, and Cybernetics, 3(6), 1973. [11] Y. Ke and R. Sukthankar. PCA-SIFT: A More Distinctive Representation for Local Image Descriptors. In CVPR 2004, volume 2, pages 506–513, 2004.
+
+[12] S. Lazebnik, C. Schmid, and J. Ponce. Beyond bags of features: Spatial pyramid matching for recognizing natural scene categories. In CVPR 2006, pages 2169–2178, 2006. [13] Z. Lin and L. S. Davis. A pose-invariant descriptor for human detection and segmentation. In ECCV, 2008. [14] S. Maji, A. Berg, and J. Malik. Classiﬁcation using intersection kernel support vector machines is efﬁcient. In CVPR, June 2008. [15] K. Mikolajczyk, C. Schmid, and A. Zisserman. Human detection based on a probabilistic assembly of robust part detectors. In ECCV 2004, volume I, pages 69–81, 2004. [16] A. Mohan, C. Papageorgiou, and T. Poggio. Examplebased object detection in images by components. PAMI, 23(4):349–361, 2001. [17] Y. Mu, S. Yan, Y. Liu, T. Huang, and B. Zhou. Discriminative local binary patterns for human detection in personal album. In CVPR 2008, pages 1–8, June 2008. [18] S. Munder and D. Gavrila. An experimental study on pedestrian classiﬁcation. PAMI, 28(11):1863–1868, 2006. [19] R. Rosipal and N. Kramer. Overview and recent advances in partial least squares. Lecture Notes in Computer Science, 3940:34–51, 2006. [20] V. Shet, J. Neuman, V. Ramesh, and L. Davis. Bilattice-based logical reasoning for human detection. In CVPR, 2007. [21] D. Tran and D. Forsyth. Conﬁguration estimates improve pedestrian ﬁnding. In NIPS 2007, pages 1529–1536. MIT Press, Cambridge, MA, 2008. [22] O. Tuzel, F. Porikli, and P. Meer. Human detection via classiﬁcation on riemannian manifolds. In CVPR, 2007. [23] H. Wold. Partial least squares. In S. Kotz and N. Johnson, editors, Encyclopedia of Statistical Sciences, volume 6, pages 581–591. Wiley, New York, 1985. [24] S. Wold, W. Johansson, and M. Cocchi. PLS - Partial LeastSquares Projections to Latent Structures. In H. Kubinyi, editor, 3D QSAR in Drug Design: Volume 1: Theory Methods and Applications, pages 523–550. Springer Verlag, 1993. [25] B. Wu and R. Nevatia. Detection of multiple, partially occluded humans in a single image by bayesian combination of edgelet part detectors. In ICCV, pages 90–97, 2005. [26] B. Wu and R. Nevatia. Optimizing discrimination-efﬁciency tradeoff in integrating heterogeneous local features for object detection. In CVPR 2008, pages 1–8, June 2008. [27] W. Zhang, G. Zelinsky, and D. Samaras. Real-time accurate object detection using multiple resolutions. In ICCV, 2007. [28] Q. Zhu, M.-C. Yeh, K.-T. Cheng, and S. Avidan. Fast human detection using a cascade of histograms of oriented gradients. In CVPR 2006, pages 1491–1498, 2006.
+
+Video Compression and Retrieval of Moving Object Location Applied to Surveillance
+William Robson Schwartz1 , Helio Pedrini2 , and Larry S. Davis1
+1
+
+University of Maryland, Department of Computer Science College Park, MD, USA, 20742 2 Institute of Computing, University of Campinas Campinas, SP, Brazil, 13084-971
+
+Abstract. A major problem in surveillance systems is the storage requirements for video archival; videos are recorded continuously for long periods of time, resulting in large amounts of data. Therefore, it is essential to apply eﬃcient compression techniques. Additionally, it is useful to be able to index the archived videos based on events. In general, such events are deﬁned by the interaction among moving objects in the scene. Consequently, besides data compression, eﬃcient ways of storing moving objects should be considered. We present a method that exploits both temporal and spatial redundancy of videos captured from static cameras to perform compression and subsequently allows fast retrieval of moving object locations directly from the compressed data. Experimental results show that the approach achieves high compression ratios compared to other existing video compression techniques without signiﬁcant quality degradation and is fast due to the simplicity of the operations required for compression and decompression.
+
+1
+
+Introduction
+
+Surveillance videos are widely used in domains such as access control in airports, traﬃc monitoring and human identiﬁcation. In many of these applications, cameras capture information over long periods of time, resulting in a large amount of data. Such large amounts of data require compression techniques that are not only eﬃcient but also suitable for the domain of surveillance. Compression techniques take advantage of both spatial and temporal redundancies present in the data. In contrast to spatial redundancy, which has been extensively studied in the image compression ﬁeld, temporal redundancy has received less consideration. Most of video compression techniques are intended for general purpose videos, for instance when no assumptions about camera motion are made. However, in surveillance applications, videos are usually collected from stationary cameras, resulting in a large amount of temporal redundancy due to high inter-frame correlation. Therefore, suitable techniques can be applied to achieve high compression ratios without losing important information. Block-based and object-based coding are the main approaches applied to video compression. Within the ﬁrst group are the video compression techniques such as H.261, H.263, MPEG-1, MPEG-2 and MPEG-4 [1–5]. Most block-based
+
+2
+
+compression approaches reduce temporal and spatial redundancy by considering motion compensation prediction and then applying transform coding to the diﬀerence of predicted and actual frames. As block-based techniques do not make assumptions regarding camera motion, temporal redundancy is not fully exploited. Furthermore, it is not a trivial task to retrieve regions of interest from data compressed with such techniques. On the other hand, object-based techniques achieve data compression by separating moving objects from the stationary background and obtaining representations for their shape and motion. Such techniques are more suitable for compressing surveillance videos since they assume that the camera is static. An object-based video compression system using foreground motion compensation for transmission of surveillance videos was proposed by Babu and Makur [6]. The moving objects are segmented from the background, assumed to be known before hand, by using an edge-based technique. Then, the objects in the current frame are motion compensated according to the previous frame and the resulting error is encoded by a shape adaptive discrete cosine transform. A drawback of such an approach is that it is not robust to incorrect foreground segmentation; therefore, information regarding moving objects might be lost. Another object-based approach is proposed by Hakeem et at. [7], where object models are learned while compression is performed. Each object is modeled by a few principal components obtained by principal component analysis (PCA). As well as in [6], they assume that the foreground segmentation is given. Instead of performing compression based on whole objects, Nishi and Fujiyoshi [8] propose a method based on pixel state analysis. Although it is possible to restore the intensity of pixels belonging to moving objects, the location of the whole object is not directly extracted from the compressed data. Additionally, key frames need to be saved every few seconds to adapt to ambient illumination changes. Despite this method takes advantage of the temporal redundancy in both background regions and moving objects by looking at variations over time, the reduction in spatial redundancy is not considered since each pixel is separately encoded. While Nishi and Fujiyoshi [8] consider variations on pixels, the method proposed by Iglesias et al. [9] represents an entire frame using its projection on the eigenspace computed from a reference frame. In the case of small variations, only a few coeﬃcients need to be stored. However, when major changes take place in the scene, the eigenspace for large regions needs to be updated. They try to overcome this problem by dividing the video into groups of frames and creating an eigenspace for each, assuming small variations within a group of frames. This paper proposes a method for handling the problems incurring in techniques described previously. Under the assumption that the video is acquired from a static camera, the method is developed based on two key ideas. First, we consider eigenspace representations for non-overlapping blocks in the image so that the method can be robust to random variations and exploit spatial and temporal redundancy. Second, regions containing moving objects are encoded
+
+3
+
+diﬀerently from background regions, providing information used to allow eﬃcient retrieval of regions of interest directly from the compressed data. Two methods are combined for the data compression. For a given frame, we ﬁrst attempt to model blocks using eigenspaces since they can achieve high compression ratios. However, in case of nonlinear changes, where eigenspaces fail, we apply a second method that groups blocks poorly modeled by the eigenspaces and compress them by using MPEG-4 method. Jinzenji et al. [10] also attempt to encode stationary and moving regions differently. However, in their approach the video is divided into segments composed of a small ﬁxed number of frames. Then, a model of the stationary regions is built and stored for each one of these segments containing signiﬁcant amount of stationary regions. This usually leads to lower compression ratios once the background may not be changed during several consecutive segments. The application of a two-stage technique distinguishes our method from other encoding techniques providing signiﬁcant reduction in the amount of data needed to reconstruct each frame. Additionally, our method provides the moving object locations directly in the compressed data, which reduces the search space for locating regions of interest, supporting fast computer vision analyses, such as object tracking, object detection and event detection/recognition. This paper is organized as follows. Section 2 describes the eigenspace representation. In Section 3 we describe the proposed method. Experimental results are shown and discussed in Section 4. Section 5 concludes with some ﬁnal remarks.
+
+2
+
+Eigenspace Representation
+
+Although pixel-based techniques attempt to reduce temporal redundancy due to correlation between frames, they tend to ignore the correlation of neighboring pixels. Ignoring this neighborhood information results in instability due to random variations present in pixels and poor use of the spatial redundancy. To overcome such problems, region-based approaches may be considered. Principal component analysis (PCA) is a well-known technique that reduces spatial redundancy of the input data by projecting the data onto a proper basis, called an eigenspace [11]. One of the advantages of PCA over other transforms such as discrete cosine transform (DCT) and wavelets is that the basis depends on the data, which allows a more accurate reconstruction of the original information with fewer coeﬃcients. Similarly to [7, 9], other works have exploited eigenspaces to perform video coding [12–14]. In general, they either compute eigenspaces for the entire frame and update the model as the image changes, try to model objects in the scene, such as human faces, or code the error in motion prediction. In contrast, we compute eigenspaces for small blocks of the image by sampling a set of frames of the video so that diﬀerent conditions can be captured. By considering blocks, we reduce the eﬀect of nonlinear changes that take place when the scene is considered as a whole, for example, an illumination change may lead to global nonlinearities, but be locally linear almost everywhere.
+
+4
+
+A number of methods have been proposed for computing PCA by performing eigenvalue decomposition of the covariance matrix of X [15–17]. Instead, we use an iterative algorithm called NIPALS (Non-linear Iterative PArtial Least Squares) which computes the eigenspace directly from the data matrix X [18]. NIPALS algorithm avoids estimating the covariance matrix, which may be expensive depending on the number of pixels in the block. Computing the eigenspace directly from X can be a good approximation to PCA when only a few principal components are used [19]. According to our experiments, NIPALS is on average ten times faster than PCA to extract the number of components used in our method. This allows us to update the eigenspaces when needed without signiﬁcant reduction in speed.
+
+3
+
+Proposed Method
+
+This section describes the method proposed for compressing surveillance videos by reducing both spatial and temporal redundancy present in videos and allows the retrieval of moving object locations directly from the compressed data. We combined two encoding methods for compressing the data. The ﬁrst method uses eigenspaces to model non-overlapping rectangular blocks of the image. Initially, the eigenspaces are learned from a subset of sampled frames. Then, for each frame, pixels within a block are projected to the corresponding eigenspace and the reprojection error is measured. If the reprojection error is high, meaning that the block is not modeled properly by the eigenspace, a second method is used to encode the block. The second method uses MPEG-4 to compress a set of blocks poorly modeled by the eigenspaces. Since one of the main goals of surveillance systems is to analyze events taking place over time, in general characterized by the interaction of moving objects, we take advantage of the compression algorithm and encode the location of blocks containing moving objects. Such locations are obtained from the reprojection error of the eigenspaces. 3.1 Learning the Eigenspaces
+
+Before performing data compression, eigenspaces for non-overlapping blocks of the image need to be estimated. Although this step incurs nontrivial computational cost, the contribution of this preprocessing step to the overall time is negligible compared to compressing the entire video, since the proposed method is applied to long duration surveillance videos. To learn an eigenspace, a set of frames is sampled so that PCA can capture the variation of pixels within the block. However, to obtain a robust estimate of the variations in a block, the sample needs to be free of nonlinear changes such as moving objects. Therefore, the ﬁrst step to learn the eigenspaces is the removal of undesired frames for a given block. Assuming that in any large subset of frames there is a certain number of samples free of nonlinear changes and moving objects, we proceed as follows.
+
+5
+
+First, an eigenspace is computed based on the entire subset and the reconstruction error ∆ is measured for each frame. This eigenspace ﬁts the mode of the data, composed of the desired frames, which have small ∆. Then, to estimate which frames need to be removed, we compute the median of the error, m. We also estimate the standard deviation, σ, for those frames with ∆ < m. Finally, frames for which ∆ > m + cσ are removed, where c is a constant. Using the median and standard deviation, the estimation of the threshold to deﬁne frame removal is robust to large errors from frames containing nonlinear variation and prevents good samples with relatively low ∆ from being discarded. Figure 1 shows the reconstruction error for a subset of frames. After applying the described procedure, samples marked in red are removed, most of them containing moving objects inside the block.
+40 35 RMSE median
+
+reconstruction error
+
+30 25 20 15 10 5 0 0 50 100 150 200
+
+frame number
+
+Fig. 1: Reconstruction error for a block. Removed frames are marked with red.
+
+An eigenspace Pi = {p1 , p2 , . . . , pk } is computed for each block i, where k is deﬁned according to the number of principal components needed, which leads to a trade-oﬀ between quality and amount of compression. Additionally, considering the reconstruction error for every pixel p within a block, an error distribution δp is estimated, where δp is assumed to be normally distributed. Considering that some changes may take place in the scene over time, we allow for new eigenspaces to be recomputed in order to adapt to the new conditions. For each block, we use ∆ and σ to create an error model ωi , so that we can evaluate if an eigenspace is becoming obsolete for the compression, as will be discussed in the next section. 3.2 Compression Algorithm
+
+As discussed in Section 2, the use of eigenspaces can achieve high compression since only a few principal components are required for each block. However, eigenspaces cannot model nonlinear changes. For this reason, we consider a second method, using MPEG-4 compression, to compress blocks poorly modeled by eigenspaces. The outline of the proposed compression algorithm is shown in Figure 2(a) and its details are described as follows.
+
+6
+
+(a)
+
+(b)
+
+Fig. 2: Proposed method. (a) compression algorithm; (b) decompression algorithm.
+
+To compress a video, each frame is decomposed into the same set of nonoverlapping blocks for which the eigenspaces have been learned. Then, pixels within a block i are stored in a vector X i and projected into the eigenspace Pi by Zi = Xi Pi . Finally, using principal components Zi , the mean squared error (MSE), the reprojection error, is computed by ∆i=((Xi − Zi Pi T )T (Xi − Zi Pi T ))/n, where n denotes the number of pixels in the block. Blocks resulting in ∆i smaller than an allowable error are considered well modeled by the eigenspace Pi ; therefore, we only need to store the coeﬃcients Zi . On the other hand, we need to consider a second method for compressing blocks with ∆i higher than the allowable error. For each frame, an image is formed by the blocks poorly modeled by the eigenspaces. All the other blocks of this image are assigned to black (to allow high compression ratios). After a number of such images have been processed, the compression method MPEG-4 is applied. When an eigenspace is not able to model a block for a certain period of time, this may indicate that some change occurred in the region, therefore, a new eigenspace should be estimated, so that the second method, using MPEG-4 compression, could be avoided. A new eigenspace is computed for a block i in case of the reprojection error associated with eigenspace P i does not satisfy the error model ωi for a certain number of consecutive frames. 3.3 Exploiting Temporal Redundancy
+
+In this section, we focus only on blocks well modeled by the eigenspaces. As the eigenspaces are not computed often, we are able to reduce both spatial and temporal redundancy once only a few coeﬃcients of the principal components (PCs) need to be stored for a block per frame. In the case of small linear variations within a period of time, the coeﬃcients assume similar values; therefore, further compression may be achieved. First, we convert the principal component coefﬁcients into integers by rounding. According to experimental results, we have seen that this conversion does not increase the reconstruction error signiﬁcantly.
+
+7
+
+To achieve extra compression we apply Huﬀman coding to reduce the number of bits necessary to encode principal component coeﬃcients that appear more frequently. The range and the frequency distribution for the values of each principal component coeﬃcient are estimated during the computation of the eigenspaces. Also, instead of using one Huﬀman dictionary for each principal component, which would increase signiﬁcantly the size of the header of the compressed ﬁle, we use the same dictionary for all PCs coeﬃcients. To do that, we sort the frequencies in descending order so that the values with highest frequencies are coded using the smallest codewords. Thus, for each PC coeﬃcient, we only need to store a permutation vector that allows us to recover the original ordering and its minimum value. 3.4 Locating Blocks Containing Moving Objects
+
+As discussed earlier, another goal of this work is to support eﬃcient retrieval of the location of moving objects directly from the compressed data. Characteristics of the proposed compression algorithm allow the extraction of object locations without signiﬁcant overhead. First, if a block can be modeled by the eigenspace, then we assume that there are no moving objects within that block, otherwise the reprojection error would be high due to nonlinearity of the changes, and thereby that block would be compressed by the second method. Therefore, we need to look for moving objects only in blocks compressed by the MPEG-4 method. Second, once the projection error for each block is computed by the compression algorithm and we have the error distribution for each pixel, δp (estimated during the computation of the eigenspaces), it is possible to determine if the error is consistent with the distribution for δp (in such a case it is due to inherent variations in the pixel), or it is due to unexpected changes. In the latter case, the changes may be caused either by noise not captured in δp or by moving objects. Looking at the pixel’s neighborhood helps to determine which is the case since the spatial distribution of noise tends to be spread and the spatial distribution of an object tends to be more compact. We now present the algorithm used to locate blocks containing moving objects. For a given frame, consider only blocks compressed by the second method. For each block, ﬁnd pixels p such that the reconstruction error have low probability of belonging to error distribution δp . Create a binary matrix the same size of the block and set the location of all such pixels p to 1. Apply the median ﬁlter to this matrix, then if the number of 1 entries has not been signiﬁcantly reduced, mark the block as containing moving objects. The number of pixels presenting value 1 reduces when values of 1 are spread, which does not characterize the presence of an object. 3.5 Data Storage and Decompression Algorithm
+
+We divide the data storage into two categories: a header section that stores data resulting from one time computation and a data section that stores data obtained from the compression of each frame.
+
+8
+
+For each block i, the header section keeps the block size, the eigenspace Pi , the mean vector µi of its pixels (required since PCA is computed from a mean centered matrix), and the permutation vectors. Besides that, the header also stores the dictionaries used by Huﬀman coding. The size of this section does not change over time. For each block contained in a frame, the data section stores either the coeﬃcient encoded with PCs or the result from the MPEG-based method according to the encoding method used for compressing the block, and two Boolean variables, the ﬁrst to indicate which encoding method was used and the second to indicate if the block contains moving objects. Additionally, the data section stores new eigenspaces created over time. Figure 2(b) shows the steps of the decompression algorithm for each frame. Locations of moving objects can be extracted eﬃciently by looking directly at the second Boolean variable associated with each block.
+
+4
+
+Experimental Results
+
+In this section, we show results and comparisons among the proposed approach and three standard techniques used for video compression. The results were obtained using an Intel Core 2 T200 with 2 Gbytes of RAM memory and running Windows XP operating system. To use the proposed method for compressing surveillance videos, we ﬁrst convert the color space to YCbCr, format commonly used for data compression, where Y is the luma and Cb and Cr contain blue and red chroma components. Then, eigenspaces are computed for blocks of 16×16 pixels for each color band, considering 200 frames sampled from the video. The number of coeﬃcients kept after performing PCA is estimated for each block according to either a target reconstruction error or a maximum number, if the target error cannot be reached. We have chosen blocks of 16×16 pixels because we noticed that for larger blocks, such as 64×64 and 128×128, the number of times we needed to use MPEG4 due to changes in small areas of the region is higher resulting in smaller compression ratios. As a result, we can see that blockwise approach works better than whole-frame PCA solutions because when a small region of the image changes, in the whole-frame approach, the eigenspace for the entire image needs to be updated or rebuilt, reducing the compression ratio signiﬁcantly. However, in the blockwise approach, only changing regions need to be tackled either by using MPEG4 for compression or updating the eigenspace. The measurement of reconstruction quality is the peak signal-to-noise ratio (PSNR) between the original frames and the reconstructed ones in RGB space for each color band separately, such that the average is used as the resulting PSNR. A commonly used approach to comparing diﬀerent compression methods is either to ﬁx the PSNR and assess the compression ratio (CR) or, on the opposite, having a ﬁxed compression ratio, and then measuring the reconstruction quality using PSNR. We compared our results on several video sequences with diﬀerent standard video compression techniques. Due to the lack of standard datasets to compare
+
+9
+
+video compression methods that consider static cameras, most of our videos are well-known sequences widely used by the surveillance community. One reconstructed frame of each sequence is shown in Figure 3. We compared our method to MPEG-2, MPEG-4 and H.263 using the default set of parameters provided by MEncoder [20], program used to compress the data. In addition, we considered the same set of parameters used by MPEG-4 in the second stage of our method.
+
+(a) camera1
+
+(b) camera2
+
+(c) robbery
+
+(d) station
+
+Fig. 3: Reconstructed frames from the video sequences used in the experiments.
+
+Table 1 shows the results obtained by using the proposed method and other video compression techniques, where a target PSNR was ﬁxed to compare the compression ratios. As can be observed in the table, our method achieves high compression ratios. This is due to the fact that the use of eigenspaces provides higher compression ratios since only few PC coeﬃcients need to be stored for each block. The results obtained for MPEG-2 are not shown in the table since it did not meet the target PSNR. video sequence frame size (pixels) frames PSNR (dB) MPEG-4 H.263 proposed camera1 768×288 2695 39.00 33.78 34.33 37.27 camera2 768×288 5333 38.00 40.44 40.27 45.06 robbery 720×480 3320 38.00 34.70 34.66 61.14 station 720×576 2370 39.50 51.27 49.94 105.64
+Table 1: Compression ratios obtained using the proposed method and other video compression techniques for a given PSNR.
+
+We observed that the application of Huﬀman coding over PC coeﬃcients reduces, on average, to one byte per coeﬃcient, instead of its original size of four bytes, since it is a ﬂoating-point number. Our unoptimized MATLAB code can compress video sequences listed in Table 1 at 5.2 frames/second, on average. This running time can be substantially
+
+10
+
+improved since most of operations required during the processing are vector multiplications and the MPEG-4 used to compress blocks poorly modeled by the eigenspaces runs at high frame rates. In addition to the compression, the approach locates regions containing moving objects, which is not available in standard compression techniques. For each frame, blocks with moving objects are located as described in Section 3.4 and encoded in a bitmap. Each entry of the bitmap contains the value of the second Boolean variable presented in Section 3.5. This way, the retrieval of the object location can be done quickly by indexing such bitmaps, saving processing time of subsequent processing stages, such as object recognition or object tracking. Figure 4 shows a frame of the camera2 sequence where blocks containing moving objects are marked.
+
+Fig. 4: Location of moving objects.
+
+To evaluate if object locations were correctly encoded, handed-adjusted results from background subtraction are used as ground truth of moving object location for sequence camera2. We evaluate the false positive rate (FPr) and the false negative rate (FNr), considering that a block was correctly added to the bitmap if it contains pixels belonging to objects. As results we have obtained FPr=0.025 and FNr=0.051. This means that 5.1% of moving object locations have not been encoded in the bitmap, mainly due to objects having only few pixels in a block. Also, 2.5% of the background regions were added into the bitmap, mainly due to a waving tree present in the scene.
+
+5
+
+Conclusions
+
+In this work, we have described a compression technique applied to surveillance videos. Besides achieving high compression ratios as shown in the experimental results, this technique provides a useful feature that can be used in further video processing, a mapping that locates moving objects in the scene is readily available in the compressed data.
+
+Acknowledgements
+W.R. Schwartz acknowledges “Coordena¸˜o de Aperfei¸oamento de Pessoal de ca c N´ Superior” (CAPES - Brazil, grant BEX1673/04-1). The authors are also ıvel grateful to CNPq and FAPESP for their ﬁnancial support.
+
+11
+
+References
+1. ISO/IEC 11172-2 Information Technology: Coding of Moving Pictures and Associated Audio for Digital Storage Media at up to 1.5 Mbits/s. Part 2 (1993) 2. ISO/IEC 13818-2 Information Technology: Generic Coding of Moving Pictures and Associated Audio Information. Part 2: Video (2000) 3. ISO/IEC 14496-2 Information Technology: Coding of Audio-Visual Objects. Part 2: Visual (2001) 4. ITU-T Recommendation H.261: Video Codec for Audiovisual Services at px64 kbit/s (1990) Geneve. 5. ITU-T Recommendation H.263: Video Coding for Low Bitrate Communication. Version 2 (1998) Geneve. 6. Babu, R., Makur, A.: Object-based Surveillance Video Compression using Foreground Motion Compensation. In: 9th International Conference on Control, Automation, Robotics and Vision. (2006) 1–6 7. Hakeem, A., Shaﬁque, K., Shah, M.: An Object-based Video Coding Framework for Video Sequences Obtained from Static Cameras. In: Proceedings of the 13th Annual ACM International Conference on Multimedia, New York, NY, USA, ACM (2005) 608–617 8. Nishi, T., Fujiyoshi, H.: Object-based Video Coding using Pixel State Analysis. In: Proceedings of the 17th International Conference on Pattern Recognition. Volume 3. (2004) 306–309 9. Perez-Iglesias, H., Dapena, A., Castedo, L.: A Novel Video Coding Scheme based on Principal Component Analysis. IEEE Workshop on Machine Learning for Signal Processing (2005) 361–366 10. Jinzenji, K., Okada, S., Kobayashi, N., Watanabe, H.: MPEG-4 Very Low Bitrate Video Compression by Adaptively Utilizing Sprite to Short Sequences. In: Multimedia and Expo, 2002. ICME ’02. Proceedings. 2002 IEEE International Conference on. Volume 1. (2002) 653–656 11. Jolliﬀe, I.: Principal Component Analysis. Springer, New York, NY, USA (2002) 12. Liu, J., Wu, F., Yao, L., Zhuang, Y.: A Prediction Error Compression Method with Tensor-PCA in Video Coding. In: Multimedia Content Analysis and Mining. Volume 4577. Springer (2007) 493–500 13. Torres, L., Prado, D.: A Proposal for High Compression of Faces in Video Sequences using Adaptive Eigenspaces. In: Proceedings of International Conference on Image Processing. Volume 1. (2002) I–189–I–192 14. Yao, L., Liu, J., Wu, J.: An Approach to the Compression of Residual Data with GPCA in Video Coding. In: Advances in Multimedia Information Processing PCM 2006. Volume 4261. Springer (2006) 252–261 15. Golub, G.H., Loan, C.F.V.: Matrix Computations. third edn. Johns Hopkins Press, Baltimore, MD, USA (1996) 16. Roweis, S.: EM algorithms for PCA and SPCA. In: Advances in Neural Information Processing Systems. Volume 10., Cambridge, MA, USA, MIT Press (1998) 626–632 17. Sharma, A., Paliwal, K.K.: Fast principal component analysis using ﬁxed-point algorithm. Pattern Recognition Letters 28 (2007) 1151–1155 18. Wold, H.: Estimation of Principal Components and Related Models by Iterative Least Squares. In Krishnaiah, P.R., ed.: Multivariate Analysis. Academic Press (1966) 19. Martens, H., Naes, T.: Multivatiate Calibration. John Wiley, Chichester, Great Britain (1989) 20. MPlayer: The Movie Player (2009) http://www.mplayerhq.hu/.
+
+Learning Discriminative Appearance-Based Models Using Partial Least Squares
+William Robson Schwartz
+schwartz@cs.umd.edu
+
+Larry S. Davis
+lsd@cs.umd.edu
+
+University of Maryland, A.V.Williams Building, College Park, MD 20742, USA
+
+Abstract
+Appearance information is essential for applications such as tracking and people recognition. One of the main problems of using appearance-based discriminative models is the ambiguities among classes when the number of persons being considered increases. To reduce the amount of ambiguity, we propose the use of a rich set of feature descriptors based on color, textures and edges. Another issue regarding appearance modeling is the limited number of training samples available for each appearance. The discriminative models are created using a powerful statistical tool called Partial Least Squares (PLS), responsible for weighting the features according to their discriminative power for each different appearance. The experimental results, based on appearance-based person recognition, demonstrate that the use of an enriched feature set analyzed by PLS reduces the ambiguity among different appearances and provides higher recognition rates when compared to other machine learning techniques.
+
+1
+
+Introduction
+
+Appearance-based person recognition has widespread applications such as tracking and person identiﬁcation and veriﬁcation. However, the nature of the input data poses great challenges due to variations in illumination, shadows, and pose, as well as frequent inter- and intra-person occlusion. Under these conditions, the use of a single feature channel, such as color-based features, may not be powerful enough to capture subtle differences between different people’s appearances. Therefore, additional cues need to be exploited and combined to improve discriminability of appearance-based models. In general, human appearances are modeled using colorbased features such as color histograms [4]. Spatial information can be added by representing appearances in joint
+
+color spatial spaces [6]. Also, appearance models of individuals based on nonparametric kernel density estimation have been used [11]. Other representations include spatialtemporal appearance modeling [8] and part-based appearance modeling [10]. Previous studies [12, 17, 18, 20, 22] have shown that signiﬁcant improvements can be achieved using different types (or combinations) of low-level features. A strong set of features provides high discriminatory power, reducing the need for complex classiﬁcation methods. Therefore, we augment color-based features with other discriminative cues. We exploit features based on textures and edges, obtaining a richer feature descriptor set as result. To detect subtle differences between appearances, it is useful to perform a dense sampling for each feature channel, as will be shown on the experiments. However, as a result, the dimensionality of the feature space increases considerably (a feature vector describing an appearance is composed of more than 25,000 features). Once discriminative appearance-based models have been built, machine learning methods need to be applied so that new samples of the appearances can be correctly classiﬁed during a testing stage. Learning methods such as support vector machines (SVM) [2], k-neareast neighbors combined with SVM [21], decision trees [1], learning discriminative distance metrics [11] have been exploited. However, since feature augmentation results in a high dimensional feature space, these machine learning methods may not always be used directly due to high computational requirements and low performance, as we show in the experimental results. The dimensionality of the data needs to be reduced ﬁrst. The high dimensionality, the very small number of samples available to learn each appearance and the presence of multicollinearity among the features due to the dense sampling make an ideal setting for a statistical technique known as Partial Least Squares (PLS) regression [19]. PLS is a class of methods for modeling relations between sets of observations by means of latent variables. Although originally
+
+(a)
+
+(b)
+
+(c)
+
+(d)
+
+(e)
+
+(f)
+
+(g)
+
+(h)
+
+(i)
+
+(j)
+
+(k)
+
+(l)
+
+(m)
+
+(n)
+
+(o)
+
+(p)
+
+Figure 1. Spatial distribution of weights of the discriminative appearance-based models considering eight people extracted from video sequence #0 of the ETHZ dataset. The ﬁrst row shows the appearance of each person and the second row the weights estimated by PLS for the corresponding appearance. Models are learned using the proposed method combining color, texture and edge features. PLS is used to reduce the dimensionality and the weights of the ﬁrst projection vector are shown as the average of the feature weights in each block. Red indicates high weights, blue low.
+
+proposed as a regression technique, PLS can be also be used as a class aware dimensionality reduction tool. This is in contrast to the commonly used Principal Component Analysis (PCA), which does not consider class discrimination during dimensionality reduction. The projection vectors estimated by PLS provide information regarding the importance of features as a function of location. Since PLS is a class-aware dimensionality reduction technique, the importance of features in a given location is related to the discriminability between appearances. For example, Figure 1 shows the spatial distribution of the weights of the ﬁrst projection vector when PLS is used to combine the three feature channels. High weights are located in regions that better distinguish a speciﬁc appearance from the remaining ones. For example, blacks regions of the homogeneous jackets are not given high weights, since several people wear black jackets. However, the regions where the white and red jackets are located obtain high weights due to their unique appearances. In this work we exploit a rich feature set analyzed by PLS using an one-against-all scheme [13] to learn discriminative appearance-based models. The dimensionality of the feature space is reduced by PLS and then a simple classiﬁcation method is applied for each model using the resulting latent variables. This classiﬁer is used during the testing stage to classify new samples. Experimental results based on appearance-based person recognition demonstrate that
+
+the feature augmentation provides better results than models based on a single feature channel. Additionally, experiments show that the proposed approach outperforms results obtained by techniques such as SVM and PCA.
+
+2
+
+Proposed Method
+
+In this section we describe the method used to learn the appearance models. The combination of a strong feature set and dimensionality reduction is based on our previous work developed for the purpose of pedestrian detection [16]. The features used are described in section 2.1 and an overview of partial least squares is presented in section 2.2. Finally, section 2.3 describes the learning stage of the discriminative appearance-based models.
+
+2.1
+
+Feature Extraction
+
+In the learning stage, only one exemplar is provided for each appearance i in the form of an image window. This window is decomposed into overlapping blocks and a set of features is extracted for each block to construct a feature vector. Therefore, for each appearance i, we obtain one sample described by a high dimensional feature vector v i . To capture texture we extract features from cooccurrence matrices [9], a method widely used for texture
+
+analysis. Co-occurrence matrices represent second order texture information - i.e., the joint probability distribution of gray-level pairs of neighboring pixels in a block. We use 12 descriptors: angular second-moment, contrast, correlation, variance, inverse difference moment, sum average, sum variance, sum entropy, entropy, difference variance, difference entropy, and directionality [9]. Co-occurrence features are useful in human detection since they provide information regarding homogeneity and directionality of patches. In general, a person wears clothing composed of homogeneous textured regions and there is a signiﬁcant difference between the regularity of clothing texture and background textures. Edge information is captured using histograms of oriented gradients (HOG) [5]. This method captures edge or gradient structures that are characteristic of local shape. Since the histograms are computed for regions of a given size within a window, HOG is robust to some location variability of body parts. HOG is also invariant to rotations smaller than the orientation bin size. The last type of information captured is color. In order to incorporate color we use color histograms computed for blocks. To avoid artifacts obtained by monotonic transformation in color and linear illumination changes, before calculating the histogram the value of pixels within a block are transformed to the relative ranks of intensities for each color channel R, G and B, similarly to [11]. Finally, each histogram is normalized to have unit L2 norm. Once the feature extraction process is performed for all blocks inside an image window, features are concatenated creating a high dimensional feature vector v i .
+
+Figure 2. Proposed method. For each appearance represented by an image window, features are extracted and PLS is applied to reduce dimensionality using a one-againstall scheme. Afterwards, a simple classiﬁer is used to match new samples to models learned.
+
+2.2
+
+Partial Least Squares for Dimension Reduction
+
+Partial least squares is a method for modeling relations between sets of observed variables by means of latent variables. The basic idea of PLS is to construct new predictor variables, latent variables, as linear combinations of the original variables summarized in a matrix X of descriptor variables (features) and a vector y of response variables (class labels). While additional details regarding PLS methods can be found in [15], a brief mathematical description of the procedure is provided below. Let X ⊂ Rm denote a m-dimensional space of feature vectors and similarly let Y ⊂ R be a 1-dimensional space representing the class labels. Let the number of samples be n. PLS decomposes the zero-mean matrix X (n × m) and zero-mean vector y (n × 1) into X = TPT + E y = U qT + f
+
+where T and U are n × p matrices containing p extracted latent vectors, the (m × p) matrix P and the (1 × p) vector q represent the loadings and the n × m matrix E and the n × 1 vector f are the residuals. The PLS method, using the nonlinear iterative partial least squares (NIPALS) algorithm [19], constructs a latent subspace composed of a set of weight vectors (or projection vectors) W = {w1 , w2 , . . . wp } such that [cov(ti , ui )]2 = max [cov(Xwi , y)]2
+|wi |=1
+
+where ti is the i-th column of matrix T , ui the i-th column of matrix U and cov(ti , ui ) is the sample covariance between latent vectors ti and ui . After the extraction of the latent vectors ti and ui , the matrix X and vector y are deﬂated by subtracting their rank-one approximations based on ti and ui . This process is repeated until the desired number of weight vectors had been extracted. The dimensionality reduction is performed by projecting a feature vector vi onto the weight vectors W = {w1 , w2 , . . . wp }, obtaining the latent vector zi (1 × p) as a result. This latent vector is used in the classiﬁcation.
+
+(a) sequence #1
+
+(b) sequence #2
+
+(c) sequence #3
+
+Figure 3. Samples of the video sequences used in the experiments. (a) sequence #1 is composed of 1,000 frames with 83 different people; (b) sequence #2 is composed of 451 frames with 35 people; (c) sequence #3 is composed of 354 frames containing 28 people.
+
+Similarly to PCA, in the dimensionality reduction using PLS, after relevant weight vectors are extracted, an appropriate classiﬁer can be applied in the low dimensional subspace. The difference between PLS and PCA is that the former creates orthogonal weight vectors by maximizing the covariance between elements in X and y. Thus, PLS not only considers the variance of the samples but also considers the class labels.
+
+Figure 4. Samples of a person’s appearance in different frames of a video sequence belonging to ETHZ dataset.
+
+2.3
+
+Learning Appearance-Based Models
+
+The procedure to learn the discriminative appearancebased models for a training set t = {u1 , u2 , . . . , uk }, where ui represents a subset of exemplars of each person (appearance) to be considered, is illustrated in Figure 2 and described in details as follows. Each subset ui is composed of feature vectors extracted from image windows containing examples of the i-th appearance. In this work we exploit one-against-all scheme to learn a PLS discriminatory model for each person. Therefore, when the i-th person is considered, the remaining samples t \ ui are used as counter-examples of the i-th person. For the one-against-all scheme, PLS gives higher weights to features located in regions containing discriminatory characteristics, as shown in Figure 1. Therefore, this process can be seen as a feature selection process depending on the feature type and the location. Once the PLS model has been estimated for the i-th appearance, the feature vectors describing this appearance are projected onto the weight vectors. The resulting lowdimensional features are used during the testing stage to match a query samples. When a sample is presented during the testing stage, its feature vector is projected onto the latent subspace estimated previously for each one of the k appearances and has its Euclidean distance to the samples used in training are computed. Then, this sample is classiﬁed as belonging to the appearance with the smallest Euclidean distance.
+
+3
+
+Experimental Results
+
+In this section we present experiments to evaluate our approach. Initially, we describe the parameter settings and the dataset used. Then, we evaluate several aspects of our method, such as the improvement provided by using a richer feature set, the reduction in computational cost and improvement in performance compared to PCA and SVM. Dataset. To obtain a large number of different people captured in uncontrolled conditions, we choose the ETHZ dataset [7] to perform our experiments. This dataset, originally used for human detection, is composed of four video sequences, where the ﬁrst (sequence #0) is used to estimate parameters and the remaining three sequences are used for testing. Samples of testing sequence frames are shown in Figure 3. The ETHZ dataset presents the desirable characteristic of being captured from moving cameras. This camera setup provides a range of variations in people’s appearances. Figure 4 shows a few samples of a person’s appearance extracted from different frames. Changes in pose and illumination conditions take place and due to the fact that the appearance model is learned from a single sample, a strong set of features becomes important to achieve robust appearance matching during the testing stage. To evaluate our approach, we used the ground truth in-
+
+(a) PLS
+
+(b) PCA
+
+Figure 5. Recognition rate as a function of the number of factors (plots are shown in different scales to better visualization).
+
+formation regarding people’s locations to extracted samples from each video (considering only people with size higher than 60 pixels). Therefore, a set of samples is available for each different person in the video. The learning procedure presented in Section 2.3 is executed using one sample chosen randomly per person. Afterwards, the evaluation (appearance matching) considers the remaining samples. Experimental Setup. To obtain the experimental results we have considered windows of 32 × 64 pixels. Therefore, either to learn or match an appearance, we rescale the person size to ﬁt into a 32 × 64 window. For co-occurrence feature extraction we use block sizes of 16×16 and 32×32 with shifts of 8 and 16 pixels, respectively, resulting in 70 blocks per detection window for each color band. We work in the HSV color space. For each color band, we create four co-occurrence matrices, one for each of the (0◦ , 45◦ , 90◦ , and 135◦ ) directions. The displacement considered is 1 pixel and each color band is quantized into 16 bins. The 12 descriptors mentioned earlier are then extracted from each co-occurrence matrix. This results in 10, 080 features. We calculate HOG features considering blocks with sizes ranging from 12 × 12 to 32 × 64. In our conﬁguration there are 326 blocks. As in [5], 36 features are extracted from each block, resulting in a total of 11, 736 features. The color histograms are computed from overlapping blocks of 32 × 32 and 16 × 16 pixels extracted from the image window. 16-bin histograms are computed for the R, G and B color bands, and then concatenated. The resulting number of features extracted by this method is 5, 472. Aggregating across all three feature channels, the feature vector describing each appearance contains 27, 288 elements. To evaluate the approach described in Section 2.3, we compare the results to another well-know dimensionality reduction technique, PCA, and to SVM. With PCA, we ﬁrst reduce the dimensionality of the feature vector and then we use the same classiﬁcation approach described for PLS.
+
+However, with SVM the data is classiﬁed directly in the original feature space. We consider four setups for the SVM: linear SVM with one-against-all scheme, linear multi-class SVM, kernel SVM with one-against-all scheme, and kernel multi-class SVM. A polynomial kernel with degree 3 is used. In the experiments we used the LIBSVM [3]. Since the high dimensionality of the feature space poses difﬁculties to compute the covariance matrix for PCA, we use a randomized PCA algorithm [14]. In addition, the classiﬁcation for PCA uses the same scheme described in Section 2.3 for PLS, where a query sample is classiﬁed as belonging to the model presenting the smallest Euclidean distance in the low dimensional space. Experimental results are reported in terms of the cumulative match characteristic (CMC) curves. These curves show the probability that a correct match is within the k-nearest candidates (in our experiments k varies from 1 to 7). Before performing comparisons, we use the video sequence #0 to evaluate how many dimensions (number of weight vectors) should be used in the low dimensional latent space for PLS and PCA. Figure 5 shows the CMC curves for both when the number of factors is changed. The best results are obtained when 3 and 4 factors are considered for PLS and PCA, respectively. These parameters will be used throughout the experiments. All experiments were conducted on an Intel Xeon, 3 GHz quad-core processor with 4GB of RAM running Linux operating system. The implementation is based on MATLAB. Evaluation. Figure 6 shows the recognition rates obtained for each feature individually and their combination. In both cases the dimensionality is reduced using PLS. In general, the combination of features outperforms the results obtained when individual features are considered. This justiﬁes the use of a rich set of features. Figure 8 compares the PLS method to PCA and different setups of the SVM. We can see that the PLS approach
+
+(a) sequence #1
+
+(b) sequence #2
+
+(c) sequence #3
+
+Figure 6. Recognition rates obtained by using individual features and combination of all three feature channels used in this work.
+
+Figure 7. Misclassiﬁed samples of sequence #3. The images on the left show the training samples used to learn each appearance model. Images on the right contain samples misclassiﬁed by the PLS method.
+
+sequence #3 together with the samples used to learn the PLS models. We see that the misclassiﬁcations are due to changes in the appearance, occlusion and non-linear illumination change. This problem commonly happens when the appearance models are not updated over time. However, if integrated into a tracking framework, for example, the proposed method could use some model update scheme that might lead to higher recognition rates. Finally, samples used to learn the appearance-based models for sequence #1 are shown in Figure 9. The large number of people and high similarity in their appearances increases the ambiguity among the models.
+
+4
+
+Conclusions and Future Work
+
+obtains high recognition rates on the testing sequences of the ETHZ dataset. The results demonstrate, as one would expect, that PLS-based dimensionality reduction provides a more discriminative low dimensional latent space than PCA. In addition, we see that classiﬁcation performed by SVM in high dimensional feature space when the number of training samples is small might lead to poor results. Finally, compared to the other methods, our approach achieves better results mainly when the number of different appearances being considered is high, i.e. sequences #1 and #2. In terms of computational cost, Figure 8 shows that the proposed method, is in general, between PCA and SVM. The training and testing computational costs depend on the number of people and number of testing samples. Sequence #1 has 4, 857 testing samples amongst the 83 different people and sequences #2 and #3 have 1, 961 and 1, 762, respectively. The number of different people in each sequence is described in Figure 3. Figure 7 shows some of the misclassiﬁed samples of
+
+We described a framework to learn discriminative appearance-based models based on PLS analysis. The results show that this method outperforms other approaches considering an one-against-all scheme. It has also been demonstrated that the use of a richer set of features leads to improvements in results. As a future direction, we intend to incorporate the use of the richer set of features and the high discriminative dimensionality reduction provided by PLS into a pairwisecoupling framework aiming at further reduction of ambiguity when the number of appearances increases.
+
+Acknowledgements
+This research was partially supported by the ONR MURI grant N00014-08-10638 and the ONR surveillance grant N00014-09-10044. W. R. Schwartz acknowledges “Coordenacao de Aperfeicoamento de Pessoal de N´vel Su¸˜ ¸ ı perior” (CAPES - Brazil, grant BEX1673/04-1). The authors also thank Aniruddha Kembhavi for his comments.
+
+(a) Recognition rates for sequence #1
+
+(b) Computational time for sequence #1
+
+(c) Recognition rates for sequence #2
+
+(d) Computational time for sequence #2
+
+(e) Recognition rates for sequence #3
+
+(f) Computational time for sequence #3
+
+Figure 8. Performance and time comparisons considering the PLS method, PCA and SVM. SVM1: linear SVM (one-against-all), SVM2: linear SVM (multi-class), SVM3: kernel SVM (one-against-all), SVM4: kernel SVM (multi-class).
+
+References
+[1] Y. Amit, D. Geman, and K. Wilder. Joint Induction of Shape Features and Tree Classiﬁers. PAMI, 19(11):1300–1305, 1997. [2] A. Bosch, A. Zisserman, and X. Muoz. Image Classiﬁcation using Random Forests and Ferns. In ICCV, pages 1–8, 2007. [3] C.-C. Chang and C.-J. Lin. LIBSVM: a library for support vector machines, 2001. Software available at www.csie.ntu.edu.tw/ cjlin/libsvm.
+
+[4] D. Comaniciu, V. Ramesh, and P. Meer. Kernel-based Object Tracking. PAMI, 25(5):564–577, 2003. [5] N. Dalal and B. Triggs. Histograms of Oriented Gradients for Human Detection. In CVPR, 2005. [6] A. Elgammal, R. Duraiswami, and L. Davis. Probabilistic Tracking in Joint Feature-Spatial Spaces. In CVPR, volume 1, pages 781–788, 2003. [7] A. Ess, B. Leibe, and L. V. Gool. Depth and Appearance for Mobile Scene Analysis. In ICCV, 2007.
+
+Figure 9. Samples of different people in sequence #1 used to learn the models.
+[8] N. Gheissari, T. B. Sebastian, and R. Hartley. Person Reidentiﬁcation Using Spatiotemporal Appearance. In CVPR, pages 1528–1535, 2006. [9] R. Haralick, K. Shanmugam, and I. Dinstein. Texture Features for Image Classiﬁcation. IEEE Transactions on Systems, Man, and Cybernetics, 3(6), 1973. [10] J. Li, S. Zhou, and R. Chellappa. Appearance Modeling Under Geometric Context. In ICCV, volume 2, pages 1252– 1259, 2005. [11] Z. Lin and L. S. Davis. Learning Pairwise Dissimilarity Proﬁles for Appearance Recognition in Visual Surveillance. In International Symposium on Advances in Visual Computing, pages 23–34, 2008. [12] S. Maji, A. Berg, and J. Malik. Classiﬁcation Using Intersection Kernel Support Vector Machines is Efﬁcient. In CVPR, 2008. [13] C. Nakajima, M. Pontil, B. Heisele, and T. Poggio. Fullbody Person Recognition System. Pattern Recognition, 36(9):1997–2006, 2003. [14] V. Rokhlin, A. Szlam, and M. Tygert. A Randomized Algorithm for Principal Component Analysis. ArXiv e-prints, 2008. [15] R. Rosipal and N. Kramer. Overview and Recent Advances in Partial Least Squares. Lecture Notes in Computer Science, 3940:34–51, 2006. [16] W. R. Schwartz, A. Kembhavi, D. Harwood, and L. S. Davis. Human Detection Using Partial Least Squares Analysis. In ICCV, 2009. [17] M. Varma and D. Ray. Learning the Discriminative PowerInvariance Trade-Off. In ICCV, pages 1–8, 2007. [18] X. Wang, G. Doretto, T. Sebastian, J. Rittscher, and P. Tu. Shape and Appearance Context Modeling. In ICCV, pages 1–8, 2007. [19] H. Wold. Partial Least Squares. In S. Kotz and N. Johnson, editors, Encyclopedia of Statistical Sciences, volume 6, pages 581–591. Wiley, New York, 1985. [20] B. Wu and R. Nevatia. Optimizing DiscriminationEfﬁciency Tradeoff in Integrating Heterogeneous Local Features for Object Detection. In CVPR, pages 1–8, 2008. [21] H. Zhang, A. Berg, M. Maire, and J. Malik. SVM-KNN: Discriminative Nearest Neighbor Classiﬁcation for Visual Category Recognition. In CVPR, volume 2, pages 2126– 2136, 2006. [22] W. Zhang, G. Zelinsky, and D. Samaras. Real-time Accurate Object Detection using Multiple Resolutions. In ICCV, 2007.
+
+Resource Allocation for Tracking Multiple Targets Using Particle Filters
+Aniruddha Kembhavi† William Robson Schwartz Larry S. Davis † Department of Electrical Engineering Department of Computer Science University of Maryland, College Park, MD, USA
+anikem@umd.edu, schwartz@cs.umd.edu, lsd@cs.umd.edu
+
+Abstract
+Particle ﬁlters have been very widely used to track targets in video sequences. However, they suffer from an exponential rise in the number of particles needed to jointly track multiple targets. On the other hand, using multiple independent ﬁlters to track in crowded scenes often leads to erroneous results. We present a new particle ﬁltering framework which uses an intelligent resource allocation scheme allowing us to track a large number of targets using a small set of particles. First, targets with overlapping posterior distributions and similar appearance models are clustered into interaction groups and tracked jointly, but independent of other targets in the scene. Second, different number of particles are allocated to different groups based on the following observations. Groups with higher associations (quantifying spatial proximity and pairwise appearance similarity) are given more particles. Groups with larger number of targets are given a larger number of particles. Finally, groups with ineffective proposal distributions are assigned more particles. Our experiments demonstrate the effectiveness of this framework over the commonly used joint particle ﬁlter with Markov Chain Monte Carlo (MCMC) sampling.
+
+1 Introduction
+The problem of object tracking has been the subject of a very large body of research. The vast improvement in the performance and the reduction in camera costs, coupled with ever increasing computing resources has led to the development of many sophisticated single and multitarget tracking algorithms. Speciﬁcally, the advent of intelligent surveillance systems has focused research efforts on the problem of detecting and tracking multiple humans. More recently, target tracking has been dominated by sequential Monte Carlo methods. The most popular Monte Carlo tracking method is the Condensation algorithm [8], commonly referred to as a particle ﬁlter. Particle ﬁlters have been used both widely and successfully to track objects in video sequences. However, as the number of tar-
+
+gets to be jointly tracked increases, the dimensionality of the state space increases and the number of particles needed to sample this space rises exponentially. For a large number of targets often seen in surveillance videos, particle ﬁlters require an infeasible number of computations. Using multiple independent particle ﬁlters alleviates this tractability problem at the cost of performance. Independent particle ﬁlters often suffer from the problem of hijacking [10]. When two or more targets come close to one another, the target with the best likelihood score often hijacks the other ﬁlters, leading to tracking errors. Hijacking is boosted under the following conditions. Targets that lie in close proximity to one another in the state space may hijack the other’s ﬁlter. The proximity of two targets in the state space can be estimated by a measure of the overlap of their posterior probability distribution functions. Hijacking also increases when the interacting targets have similar appearance models. We present a particle ﬁltering framework along with an overlying graph structure that allows us to deal with the problem of hijacking without increasing the computational cost exponentially. A graph, whose nodes are the targets in the image and whose edges are a measure of the proximity and appearance similarity between targets is used to cluster the targets into multiple and possibly overlapping interaction groups. Targets that might hijack each other’s ﬁlters are grouped into a single group and tracked jointly, while targets in different groups are tracked independently. Our framework allows us to track all targets in the scene, while seamlessly allowing interaction groups to be formed and split at any time instant. The overall tracking framework is discussed in Section 3. An example of targets being clustered into different groups at different time instants is shown in Figure 1. We also address the problem of allocating resources to the different interaction groups identiﬁed in the scene. In the particle ﬁltering framework, the resources are essentially the total number of particles, which directly determines the computational cost. Given an upper bound on the number of particles to be used at any time instant, how
+
+Figure 1. 3 frames from surveillance camera 1 monitoring a parking lot. The bounding rectangles show targets that are grouped together into a single interaction group and tracked jointly. Red rectangles show targets that are grouped individually, whereas the green and blue rectangles show groups of two and three targets respectively. Notice that the groups may overlap.
+
+should we distribute them to minimize the number of tracking errors? Our solution to this optimization problem is based on the following observations. First, we assign more particles to groups with a larger number of targets due to their increased state space dimensionality. Second, we assign more particles to groups with higher associations. The association of a group quantiﬁes the spatial proximity and pairwise appearance similarities of the targets in the group. Third, we assign more particles to groups whose ﬁlters have a higher effective particle sample size at the previous time instant. This gives a measure of the ineffectiveness of the particle proposal distributions for each group. We further elaborate on the issue of resource allocation in Section 4. We demonstrate our particle ﬁltering framework on video sequences captured from two surveillance cameras overlooking a pedestrian walkway and a parking lot. Sequences from Camera 1 have up to 5 people simultaneously, while those from Camera 2 have up to 9 people simultaneously in the scene with an average height of just 27 pixels in the image. We provide comparisons to two other methods ﬁrst, using multiple independent particle ﬁlters and second, using a single joint particle ﬁlter with MCMC as a speed-up mechanism. Our results clearly demonstrate the superiority of our particle ﬁltering framework over the others, while using the same number of particles.
+
+2 Related Work
+Given the extensive amount of work carried out in the ﬁeld of object tracking, we are unable to provide an exhaustive literature review. Here, we present some of the more relevant bodies of work. For a good survey, we refer the reader to [16]. Many Bayesian approaches to the tracking problem have been explored before. When the posterior density of the targets at every time step can be assumed to be Gaussian, Kalman ﬁlters provide the optimal solution [3]. When such
+
+constraints are invalid and need to be relaxed, the optimal solution typically becomes intractable. This has led to several approximation algorithms such as the extended Kalman ﬁlter, approximate grid-based ﬁlter [1] and the particle ﬁlter. The particle ﬁlter, originally introduced as the Condensation algorithm in the computer vision community, was proposed in [8], and has been widely and very successfully used for tracking targets [7][9][12]. There has also been research aimed at speeding up particle ﬁlters, so as to be able to track multiple targets in video sequences for real-time applications. Khan et al. replace the traditional importance sampling step in the particle ﬁltering framework by a Markov Chain Monte Carlo (MCMC) sampling step. This leads to an efﬁcient sampling of the target posterior distribution [10]. They also incorporate a Markov Random Field (MRF) to model interactions between targets to prevent hijacking. Zhao et al. [18] use MCMC with jump/diffusion dynamics to sample the posterior distribution. They also perform a detailed target occlusion analysis and are able to track many humans together in a crowded environment. In Section 5, we compare our particle ﬁltering framework with a single joint particle ﬁlter using MCMC as a speed-up mechanism. Our method obtains superior results when using the same number of particles, due to the appropriate particle distribution scheme. Yang et al. use a Hierarchical Particle Filter [15], whereby they break down the multi-feature observation likelihood to be computed in a coarse to ﬁne manner. This allows the computation to quickly focus on more promising regions and speeds up the entire system. They also employ optimized computational techniques such as Integral Histograms [13]. Khan et al. [11] introduce an efﬁcient method for using subspace representations in a particle ﬁlter. They apply Rao-Blackwellization to integrate out the subspace coefﬁcients in the state vector. Since part of the posterior is analytically calculated, the number of particles required decreases, which in turn speeds up the system. Brandao et
+
+al. [2] speed up the particle ﬁltering approach by dividing the search space into subspaces that can be estimated separately. Low correlated subspaces are estimated with parallel or serial ﬁlters and their probability distributions are combined by a special aggregator ﬁlter. Sankaranarayanan et al. [14] present a method for implementing the particle ﬁlter using the Independent Metropolis Hastings sampler, that is highly amenable to pipelined implementations and parallelization. Zhou et al. [19] use an adaptive number of particles determined by the variance of the adaptive noise model at the current time step. As the variance decreases, the computational cost of the ﬁlter reduces. Gupta et al. [5] use an approach for camera selection and inference ordering to reduce the computational cost required to track people in a multi-camera framework. Yu et al. [17] present a decentralized approach to multiple tracking for the emerging application of sensor networks. In order to distribute the computation amongst multiple sensing units, they employ a set of autonomous and collaborative trackers. Dowdall et al. [4] also employ a distributed network of individual trackers. The interactions of these trackers are modeled using coalitional game theory. As in our tracking framework, such decentralized approaches address the tracker coalescence problem (the problem of hijacking ﬁlters). Our framework further allows us to allocate resources intelligently. This leads to superior tracking performance using a lesser number of particles.
+
+3 Tracking Framework
+Let Xt denote the state of the system and Zt denote the observation at time t. In a Bayesian tracking framework, we wish to estimate the posterior distribution P (Xt |Zt ) given in Equation (2). In a particle ﬁlter, the posterior distribution at time t is approximated by a set of particles with weights π r , as shown in Equation (3). P (Zt |Xt ) denotes the likelihood function and P (Xt |Xt−1 ) denotes the proposal distribution. In a regular particle ﬁlter, at every time step, new particles are generated from the particles at the previous time step using the proposal distribution, and their weights are obtained using the likelihood function. This gives the posterior distribution for the current time step. The number of particles needed to sample a higher dimensional state space increases exponentially with the dimensionality of the space (determined by the number of targets in the scene). P (Xt |Zt ) = P (Zt |Xt )P (Xt ) P (Zt ) P (Xt |Xt−1 )
+Xt−1
+
+Φ denotes the normalization constant. Let Nt be the total number of targets in the scene at time t. In our particle ﬁltering framework, at every time t, we cluster targets into possibly overlapping interaction groups, so that targets within a single group are tracked jointly, but targets in different groups are tracked independently of each other. This group structure can change at every time instant. The groups at j time t are denoted as gt ∀ j = {1, 2, .., Gt }, where Gt is the total number of groups at the time instant t. When referring to a single group, we will often drop the superscript j for ease of reading. We use λg to denote the set of all t n targets in group gt , and kt to be the set of all groups of which target n is a member at time t. As an example consider Figure 2(a). Based on the proximity and appearance of the 4 targets in the scene, 3 groups have been formed. 1 Thus, λ1 = {1},λ2 = {2, 3} and λ3 = {2, 4}. kt = {1}, t t t 2 3 4 kt = {2, 3}, kt = {2} and kt = {3}. The overall framework is summarized in Algorithm 1 and illustrated with an example in Figure 2. At time t − 1, Nt−1 targets are clustered into Gt−1 interaction groups. Each group is characterized by a joint distribution given by λg j P (Xt−1 |Z1:t−1 ). For each group gt−1 , new particles are proposed and their joint likelihoods are calculated (this is done independent of other groups in the scene). The resulting posterior distribution for each group is then marginalized to obtain the marginal posterior distribution for every target in the group. Targets belonging to multiple groups will thus have multiple such distributions. Inspired by work in the ﬁeld of sensor fusion based on particle ﬁlters [6], the particle ﬁlter corresponding to each group in the scene can be considered a logical sensor. For any given target, multiple distributions can be thought of as being generated by multiple logical sensors. Similar to [6], they can be combined linearly using appropriate mixture weights κg , to t−1 obtain a resultant posterior distribution per target. Thus, for every target n in the scene,
+n P (Xt |Z1:t−1 ) =
+n j∈kt−1
+
+n (κj Pj (Xt |Z1:t−1 )) t−1
+
+(4)
+
+(1)
+
+= ΦP (Zt |Xt ) P (Xt−1 |Zt−1 ) ≈ ΦP (Zt |Xt )
+r
+
+(2)
+r r πt−1 P (Xt |Xt−1 )
+
+(3)
+
+Every group has a mixture weight which represents a measure of the group tracking conﬁdence. This conﬁdence value for each group is obtained at the previous time instant, and is determined by the likelihood estimates of the particles representing the corresponding group posterior distribution at time t − 1. Combining information from multiple ﬁlters has the added advantage of yielding more robust resultant distributions for each target in the scene. An example can be seen in Figure 2(b,c), where ﬁlter 2 has erroneous particles with large weights. However, since the mixture weight for ﬁlter 3 is higher than that of ﬁlter 2 (obtained from the previous time instant), the resultant posterior distribution for target 2 is improved. Using the resultant posterior distribution for each target
+
+Zoomed View
+
+Zoomed View
+
+1
+g1 g2
+
+n2
+g3
+
+n2
+
+2 3
+
+4
+
+n4 n3
+(a) (b)
+
+n4 n3
+(c)
+
+0.5
+
+1
+0.25 0.2 0.6 0.6
+
+0.6 0.85 0.6 0.3 0.3
+
+2 1
+0.81
+
+1 2 4 3 3
+(e) (f)
+
+2 4
+
+3
+
+0.73
+
+4
+(d)
+
+Figure 2. A synthetic example demonstrating our tracking framework. (a) 4 targets n1 to n4 clustered into groups g1 to g3 at time t − 1, where n4 is moving south. (b) (Zoomed in view at time t). Particles representing the marginal distributions of the targets (blue for n2 , red for n3 , black for n4 ). n2 has twice the number of particles, representing two marginal distributions. Filter for g2 has erroneous particles with high weights since n2 and n3 have very similar appearances. However, ﬁlter for g2 has a lower mixture weight than the ﬁlter for g3 based on the likelihood estimates of the previous frame (not shown). (c) The resultant marginal distributions are thus more robust and have fewer erroneous particles with high weights. (d) Proximity (solid) and appearance similarity graphs (dashed). (e) New group structure at time t. (f) Maximum likelihood particles shown for all 4 targets in the scene.
+
+in the scene, we build a proximity graph for all targets in the scene, where each node in the graph is a target and an edge between two nodes represents the similarity between the posterior distributions of the two targets. We ﬁrst estimate these non-parametric distributions from the corresponding particles using Kernel Density Estimation (KDE), and use the Kullback-Liebler (KL) distance between the two. Our state space for each target is 4-dimensional (x-position(x), y-position(y), width(w), height(h)). Using gaussian kernels K and M particles, the density estimate is given by, M 1 p(x, y, w, h) = ˆ Kσ (x − xm )Kσy (y − ym ) M m=1 x Kσw (w − wm )Kσh (h − hm ) (5) An appearance similarity graph is also built with each edge weight set equal to the similarity between the appearance models of the two targets. We model the appearance of targets using histograms in each color channel, and use the L2 distance as a distance measure. The proximity graph (PG) and appearance similarity graph (AG) are combined linearly to form a single similarity graph (SG) which is used to obtain a new group structure for the current time step t. SG(i, j) = αP G P G(i, j) + αAG AG(i, j)...∀i, j (6)
+
+The issue of clustering targets into interaction groups based on the similarity graph is dealt with in the following section. Given the marginal distributions for every target and j the new group structure gt , j = {1, 2, .., Gt }, we need to obtain the appropriate joint distributions for each group. j For every group gt , we sample the marginal distributions of the interacting targets to obtain smaller subsets of particles, and combine them combinatorially to obtain particles for the joint distributions. For every new particle however, the joint likelihoods must be recalculated. Resampling is again performed on these particle distributions. The number of particles given by the resampling algorithm is set by the resource allocation function described in the following section. The number of particles assigned to each group at time t determines the computational cost incurred at the next time instant t + 1.
+
+4 Resource Allocation
+At every time step t, we use the Similarity Graph (SG) described in Equation (6) to distribute our resources so as to reduce the number of tracking errors. In a particle ﬁltering framework, our resources are the total number of particles
+
+Algorithm 1 Overall tracking framework 1: for t = 2 to T do 2: Nt−1 targets in the scene are divided into Gt−1 groups, each represented by a joint density. j 3: for every gt−1 do 4: Propose particles and calculate their joint likelihoods. 5: Obtain marginal distributions for each target in the group (may lead to multiple marginal distributions for each target in the scene). 6: Resample each marginal distribution. 7: end for 8: for n = 1 to Nt−1 do 9: Combine marginal distributions for each target to obtain a resultant distribution per target. 10: end for 11: Build a proximity and an appearance graph. j 12: Obtain new groups gt using the greedy algorithm (Section 4). j 13: for every gt do 14: Combine marginals to form a new joint density. 15: Recalculate joint likelihoods for all particles representing the new joint distribution. 16: Resample to obtain appropriate number of particles given by the resource allocation function (Section 4). 17: end for 18: Given the joint likelihoods for every group, update group mixture weights. 19: end for
+
+that can be used at every time step. Distribution of these particles at every time step is carried out in two stages. Targets that have a high similarity score with each other (nodes with large edge weights between them in the SG) must be grouped together (tracked jointly). Hence, in the ﬁrst stage, we cluster targets in the scene into interaction groups based on the SG. We deﬁne a binary decision variable φ(i, j) that determines if targets i and j will be grouped together, and a cost function C(g) that determines the cost of tracking targets in group g jointly. The optimization problem can be stated as follows,
+Gt
+
+max
+∀i,j
+
+φ(i, j)SG(i, j) such that min
+i=1
+
+i C(gt ) (7)
+
+new edge. Thus the computation required at each iteration is kept low. The cost function C(g) is set to be quadratic in the number of targets in group g. In this stage, all groups having the same number of targets are assigned an equal cost, irrespective of the corresponding edges in the similarity graph. Thus the ﬁrst stage outputs the group structure for the current time step. In the second stage of resource allocation, we distribute particles amongst groups based on three criteria. The ﬁrst criterion is the strength of the Similarity Graph edges between targets in the group, given by the association of the group. We deﬁne the association of group gt as the average edge strength of all edges in the group, Assoc(gt ) = 1
+len(gt ) 2 ∀i,j∈gt
+
+We solve the above optimization problem using an approximate iterative greedy algorithm for the purpose of efﬁciency. First we set φ(i, j) = 0, ∀i, j. At every iteration of the algorithm, we select an edge (i , j ) with the maximum edge strength, set φ(i , j ) = 1 and recalculate the structure of the groups formed by the result of the addition of the edge (i , j ). If the cost of this group structure is less than the predetermined maximum cost, we go to the next iteration. If the cost of the group is above the maximum, we reset φ(i , j ) to 0 and the algorithm terminates. At every such iteration, given a graph with edges φ(i, j), the structure of the interaction groups is given by the set of all maximal cliques in the graph. Since we add only a single edge to the graph at every iteration, we compute an approximation to the set of all maximal cliques by updating the set of maximal cliques in the previous iteration with the
+
+SG(i, j)
+
+(8)
+
+where len(gt ) is the number of targets in group gt . This encapsulates the proximity between the targets in the state space as well as the similarity of the appearances of all targets in the group. The number of particles assigned to the group increases with the association. The second criterion to allocate resources to a group is motivated by the degeneracy phenomenon seen in particle ﬁlters [1]. A common problem with particle ﬁlters is that with every iteration, the number of particles with nonnegligible weights decreases. The rate of degeneracy depends on the effectiveness of the particle proposal distributions (which involves the motion models learnt from the previous frames and variance estimates of the noise models). Though the degeneracy problem is overcome by the
+
+use of resampling, we argue that a measure of group degeneracy, calculated before the particle resampling stage, should be used to allocate a larger or smaller number of particles to that group. This is because greater the effect of degeneracy, poorer the proposal distribution, larger the number of particles that must be assigned to ensure an effective search of the state space and reduce tracking errors. A suitable measure of degeneracy of the group particle ﬁlter is given by the Effective Sample Size (Pef f ) of the particles characterizing the posterior distribution of the group at the previous time instant [1]. This can be obtained as,
+Ps −1 2 r πt−1
+
+Pef f =
+r=1
+
+(9)
+
+r where πt−1 represents the weight of the r’th particle at time instant t − 1, and Ps is the total number of particles. We deﬁne the fraction of effective particles (Fef f ) as Fef f = Pef f /Ps and use it as the second criterion to allocate resources. The number of particles assigned to a group increases with a decrease in the value of Fef f for the group. The third criterion to allocate resources to a group is the mean likelihood of the particles Πmean (gt ) forming the posterior distribution of the group at the previous time instant. The mean likelihood (weights) of the particles determines the effectiveness of the corresponding particle ﬁlter to sample the posterior distribution. A low mean likelihood at the previous time instant necessitates an increase in the number of particles and an increase in the variance of the noise model. This ensures better sampling of the posterior distribution and thus more accurate tracking. If a group gt is a new group formed as a result of a change in the group structure at time t, it will have no corresponding group at the previous time instant. In such cases, gt is assigned a default mean likelihood score.
+
+Πmean (gt ) =
+
+1 Ps
+
+Ps r πt−1 r=1
+
+(10)
+
+The association Assoc(gt ), fraction of effective particles Fef f (gt ) and mean likelihood Πmean (gt ) are linearly combined and used to determine the allocation of particles to each group from the total set of available particles. We also ensure that the number of particles assigned to a group lies within pre-deﬁned minimum and maximum values. These bounding values are based on the size of the group.
+
+5 Experiments
+We evaluated our tracking framework on video sequences collected from two surveillance cameras (resolution 320x240 pixels and framerate 15fps). Camera 1 overlooks a pedestrian walkway adjoining a parking lot (Figure 1). Camera 2 overlooks the parking lot (Figure 3). Multiple
+
+people enter and leave the scene. The maximum number of simultaneous people being tracked is 9. The tracking task in camera 2 is quite challenging since the average height of persons in the scene is only 27 pixels, and frequent occlusions are observed due to the large number of people. We compared our tracking framework to two other methods - ﬁrst, multiple independent particle ﬁlters and second, a single joint particle ﬁlter using MCMC as a speed up mechanism [10][18]. In our method, targets within a single interaction group were tracked using a traditional joint particle ﬁlter. However, an MCMC sampling particle ﬁlter can be used here to further speed up tracking. For all three methods, we used the same likelihood function, which is similar to that used in [18]. The maximum number of particles used in the entire scene at every time instant was kept the same for all three methods. Furthermore this upper bound on the number of particles was kept low despite the large number of people in the scene, to ensure a low computational cost, essential for any real time surveillance system. Figure 3 shows tracking results obtained by our particle ﬁltering framework for sample frames from Camera 2. The maximum number of particles was set to 2000 per frame. The top row shows the tracked targets with their IDs, while the bottom row shows the interaction groups formed at the corresponding time instants and the number of particles assigned to each group. Given a small set of particles, our results show the importance of wisely allocating more particles to those groups, whose targets are more prone to be tracked erroneously. The frame in the left column shows a group with a larger number of people (Ids 1,2,3,4) being assigned more particles than smaller groups. In the middle frame, the group of two persons (Ids 1,2) gets assigned a large number of particles per person as compared to the group of 4 persons, due to the high appearance similarity between the targets. The frame in the right column shows an example of a group of two highly occluding targets (Ids 3,4) getting assigned a larger number of particles as compared to a group with three targets (Ids 1,2,5). The other particle ﬁltering frameworks that we compare to, treat all targets equally. Thus, resources are wasted in some parts of the scene, while they are insufﬁcient for other parts. This leads to more tracking errors. Figure 4 shows the histogram of the size of the largest group in every frame for videos from both cameras. For camera 1, the largest group has size 3. For camera 2, the largest group has size 4 although up to 9 persons are simultaneously present in the scene. Each group in the scene is tracked using a particle ﬁlter with a corresponding state space. Thus, the size of the largest group determines the maximum dimensionality of all these state spaces. Note that for a majority of frames in both cameras, groups of at most size 2 are present, which restricts the state spaces to a low dimensionality. Thus, even small sets of particles are able
+
+3 2 5 1 4 6 5 2 1
+
+8 4
+
+7 3 5
+
+2 1
+
+3
+
+4 8
+
+7
+
+9
+
+696 1598 200 200 200 796 1001 594 596
+
+200
+
+Figure 3. Tracking results for Camera 2 shown for three frames. The bottom row shows interaction groups formed by our framework. Groups of the same size are marked with the same color. The number of particles assigned to each group is also displayed. (See text for detailed discussion.)
+
+to densely sample these spaces and provide good results. We measure our tracking accuracy by comparing the predicted bounding boxes to manually marked ground truth locations for all targets. The tracking error for each target is deﬁned as the degree of overlap (Θ) between the predicted bounding box (Bp ) and ground truthed bounding box (Bg ). Θ= Area(Bp ∩ Bg ) Area(Bp ∩ Bg ) + Area(Bp ) Area(Bg )
+Camera 1
+
+(11)
+
+Percentage of frames
+
+100 80 60 40 20 0 1 2 3 4 5
+
+Size of the largest group
+
+Percentage of frames
+
+100 80 60 40 20 0 1 2 3 4 5 6 7 8 9
+
+Camera 2
+
+Size of the largest group
+
+Figure 4. Histogram of the size of the largest group in every frame of the video. The size of the largest group determines the maximum dimensionality of the state space.
+
+Large values of Θ indicate a more precise tracking result. When Θ falls below a threshold Θthr for a target, we manually reinitialize the bounding box for that target and resume tracking. The length of a track is then deﬁned as the number of frames between two reinitializations. Figure 5 shows tracking results for both video sequences. The average track length is plotted against Θthr . Clearly, longer track lengths indicate a better system performance. Larger the value of Θthr , lower the error tolerance. This leads to frequent reinitializations giving shorter tracks. Figure 5(a) shows results for Camera 1. The maximum number of particles is set to 500 per frame. The independent particle ﬁlter has many hijackings that take place and needs to be reinitialized often. The joint particle ﬁlter with MCMC sampling also shows a poor performance, as compared to our tracking framework using resource allocation. Figure 5(b) shows results for Camera 2. Here we use a total of 2000 particles per frame. We notice a considerable gain in performance which is very encouraging given that video sequences from Camera 2 are very challenging. The independent particle ﬁlter gives good results when targets are far away from each other, but suffers from hijacking when interactions take place. The joint ﬁlter with MCMC shows poor results because the small set of particles is clearly insufﬁcient for the high dimensional state spaces that need to be sampled, when a large number of people are simultaneously present in the scene. Given the same number of resources, our method clearly outperforms the other two, demonstrating the importance of resource allocation.
+
+250
+
+120
+
+200
+
+Particle Filter with Resource Allocation Joint Particle Filter using MCMC Independent Particle Filters
+
+100
+
+Particle Filter with Resource Allocation Joint Particle Filter using MCMC Independent Particle Filters
+
+[500 particles / frame] Average track length
+80
+
+[2000 particles / frame]
+
+Average track length
+
+150
+
+60
+
+100
+
+40
+
+50
+
+20
+
+0 0.75
+
+0.8
+
+0.85
+
+Reinitialization threshold ( Θ )
+thr
+
+0.9
+
+0.95
+
+1
+
+1.05
+
+1.1
+
+1.15
+
+0 0.75
+
+0.8
+
+0.85
+
+Reinitialization threshold ( Θ )
+thr
+
+0.9
+
+0.95
+
+1
+
+1.05
+
+1.1
+
+1.15
+
+Figure 5. Tracking results for video sequences from Cameras 1 (frames shown in Figure 1) and 2 (frames shown in Figure 3). The system is manually reinitialized when the degree of overlap between the predicted and ground truthed bounding boxes goes below a threshold Θthr . The average length of tracks (measured as the number of frames between two reinitializations) is plotted against Θthr . Our system clearly outperforms the other two tracking methods. (See text for discussion.)
+
+6 Conclusions
+We present a particle ﬁltering framework that uses an intelligent resource allocation scheme to track a large number of targets using a small set of particles. The number of particles assigned to each target depends the number of targets it is interacting with, the proximity and appearance models of the interacting targets and the tracking conﬁdence at the previous time instant. We demonstrate the advantages of our method on sequences from two surveillance cameras and compare it to commonly used tracking frameworks.
+
+7 Acknowledgements
+This research was funded in part by the U.S. Government VACE program. W. R. Schwartz acknowledges Coordenacao de Aperfeicoamento de Pessoal de Nivel Superior (CAPES - Brazil, grant BEX1673/04-1). The authors also thank Ryan Farrell and Vlad Morariu for useful discussions.
+
+References
+[1] M. S. Arulampalam, S. Maskell, N. Gordon, and T. Clapp. A tutorial on particle ﬁlters for online nonlinear/non-gaussian bayesian tracking. IEEE Trans. Signal Proc., (2), 2002. [2] B. Brandao, J. Wainer, and S. Goldenstein. Subspace hierarchical particle ﬁlter. In SIBGRAPI, pages 194–204, 2006. [3] T. Broida and R. Chellappa. Estimation of object motion parameters from noisy images. IEEE PAMI, 8, 1986. [4] J. Dowdall, I. Pavlidis, and P. Tsiamyrtzis. Coalitional tracking in facial infrared imaging and beyond. In CVPR Workshop, 2006.
+
+[5] A. Gupta, A. Mittal, and L. Davis. Cost: An approach for camera selection and multi-object inference ordering in dynamic scenes. In ICCV, 2007. [6] B. Han, S. Joo, and L. Davis. Probabilistic fusion tracking using mixture kernel-based bayesian ﬁltering. In ICCV, 07. [7] B. Han, Y. Zhu, D. Comaniciu, and L. Davis. Kernel-based bayesian ﬁltering for object tracking. In CVPR, 2005. [8] M. Isard and A. Blake. Condensation - conditional density propagation for visual tracking. IJCV, 1998. [9] M. Isard and J. MacCormick. Bramble: a bayesian multipleblob tracker. ICCV, pages 34–41, 2001. [10] Z. Khan, T. Balch, and F. Dellaert. An mcmc-based particle ﬁlter for tracking multiple interacting targets. In ECCV, 2004. [11] Z. Khan, T. Balch, and F. Dellaert. A rao-blackwellized particle ﬁlter for eigentracking, 2004. [12] J. MacCormick and A. Blake. A probabilistic exclusion principle for tracking multiple targets. In ICCV, 1999. [13] F. Porikli. Integral histogram: A fastway to extract histograms in cartesian spaces. In CVPR, 2005. [14] A. Sankaranarayanan, A. Srivastava, and R. Chellappa. Algorithmic and architectural optimizations for computationally efﬁcient particle ﬁltering. IEEE Trans. Image Proc., 08. [15] C. Yang, R. Duraiswami, and L. Davis. Fast multiple object tracking via a hierarchical particle ﬁlter. In ICCV, 2005. [16] A. Yilmaz, O. Javed, and M. Shah. Object tracking: A survey. ACM Computing Surveys, 38(4), 2006. [17] T. Yu and Y. Wu. Decentralized multiple target tracking using netted collaborative autonomous trackers. In CVPR, 2005. [18] T. Zhao and R. Nevatia. Tracking multiple humans in crowded environment. CVPR, pages 406–413, 2004. [19] S. Zhou, R. Chellappa, and B. Moghaddam. Visual tracking and recognition using appearance-adaptive models in particle ﬁlters. IEEE Trans. Image Proc., 2004.
+
+

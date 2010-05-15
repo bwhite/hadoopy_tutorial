@@ -1,0 +1,104 @@
+Experiment 0 - Run wc.py
+$ python wc.py
+will print the help documentation at the top of the file.  This is useful so that you can quickly see what the file does.
+----------
+Hadoopy Wordcount Demo
+
+----------
+
+
+Experiment 1 - Before you can understand MapReduce, you must BECOME MapReduce!
+$ echo "one fish two fish red fish blue fish"
+will echo to console. Now pipe that into the word count mapper.
+----------
+one fish two fish red fish blue fish
+----------
+
+$ echo "one fish two fish red fish blue fish" | python wc.py map
+this will take that output and pipe it to the mapper, which will output to the console.
+----------
+one  1
+fish 1
+two  1
+fish 1
+red  1
+fish 1
+blue 1
+fish 1
+----------
+
+Since we ARE MapReduce (for this experiment), we need to sort that output, so lets do that.
+$ echo "one fish two fish red fish blue fish" | python wc.py map | sort
+----------
+blue   1
+fish   1
+fish   1
+fish   1
+fish   1
+one    1
+red    1
+two    1
+----------
+
+Now lets put that into the reducer
+$ echo "one fish two fish red fish blue fish" | python wc.py map | sort | python wc.py reduce
+----------
+blue	1
+fish	4
+one	1
+red	1
+two	1
+----------
+
+Experiment 2 - Digging Deeper
+Uncomment the two comments in the reducer, this shows you the types of the objects.
+$ echo "one fish two fish red fish blue fish" | python wc.py map | sort | python wc.py reduce
+----------
+reporter:status:key:blue values_type:<type 'generator'>
+reporter:status:key:blue count:1 type:<type 'str'>
+blue			 1
+reporter:status:key:fish values_type:<type 'generator'>
+reporter:status:key:fish count:1 type:<type 'str'>
+reporter:status:key:fish count:1 type:<type 'str'>
+reporter:status:key:fish count:1 type:<type 'str'>
+reporter:status:key:fish count:1 type:<type 'str'>
+fish			 4
+reporter:status:key:one values_type:<type 'generator'>
+reporter:status:key:one count:1 type:<type 'str'>
+one			1
+reporter:status:key:red values_type:<type 'generator'>
+reporter:status:key:red count:1 type:<type 'str'>
+red			1
+reporter:status:key:two values_type:<type 'generator'>
+reporter:status:key:two count:1 type:<type 'str'>
+two			1
+----------
+
+Note a few things
+1.  The keys and values are converted to strings when operating on the console like this (the count became a string).  When run on a cluster, the Hadoopy library will default to maintaining the types as opposed to making everything strings by using the TypedBytes serialization format. However, it can be overridden so that it always uses this style.  If the same code needs to operate with both styles (Text and Typedbytes), you should make the Map output always strings and the Reduce input should expect strings.  The Text IO-style is nice when learning as you can trivially see the intermediate results; however, in practice you should just use the TypedBytes format (default on cluster) as it makes your code cleaner and faster (no need to convert to and from strings).  The reason this is pointed out is so that you understand why it is a string now, but later it will be whatever type the Mapper output.
+2.  Using the status command prefixed it with some text, this is used by Hadoop internally to tell it that it is a status (later we will talk about counters and they use a similar prefix).  You must not use another other method of outputting text (like the print function) as it will cause problems.
+3. The type of "values" is generator.  Read up on Python Generators if you are interested, but all that you need to know is that it is an interator.  Iterators are used so that we don't need to have all of the values in memory at a time for a given key.
+4.  The status (and later counter) is actually output over stderr as opposed to stdout, you can see this by doing the following (which just removes the stdout and leaves the stderr)
+
+$ echo "one fish two fish red fish blue fish" | python wc.py map | sort | python wc.py reduce 1>/dev/null
+----------
+reporter:status:key:blue values_type:<type 'generator'>
+reporter:status:key:blue count:1 type:<type 'str'>
+reporter:status:key:fish values_type:<type 'generator'>
+reporter:status:key:fish count:1 type:<type 'str'>
+reporter:status:key:fish count:1 type:<type 'str'>
+reporter:status:key:fish count:1 type:<type 'str'>
+reporter:status:key:fish count:1 type:<type 'str'>
+reporter:status:key:one values_type:<type 'generator'>
+reporter:status:key:one count:1 type:<type 'str'>
+reporter:status:key:red values_type:<type 'generator'>
+reporter:status:key:red count:1 type:<type 'str'>
+reporter:status:key:two values_type:<type 'generator'>
+reporter:status:key:two count:1 type:<type 'str'>
+----------
+
+Experiment 2 - A first trip into the clouds
+Now we are going to run the word count demo on a Hadoop cluster.  The machine you are on has access to a very tiny Hadoop cluster (2 quad-core machines).  Run the following command to launch the job
+python run_wc.py 0
+
+It will use input-ex0-0.  You can try the other datasets 0-3 also.
