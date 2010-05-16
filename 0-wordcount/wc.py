@@ -29,9 +29,9 @@ def reducer(key, values):
         A tuple in the form of (word, count), where word is a string and count is an int.
     """
     accum = 0
-    hadoopy.status('key:%s values_type:%s\n' % (key, str(type(values))))
+    #hadoopy.status('key:%s values_type:%s\n' % (key, str(type(values))))
     for count in values:
-        hadoopy.status('key:%s count:%s type:%s\n' % (key, count, str(type(count))))
+        #hadoopy.status('key:%s count:%s type:%s\n' % (key, count, str(type(count))))
         accum += int(count)
     yield key, accum
 

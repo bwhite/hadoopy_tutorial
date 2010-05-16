@@ -97,7 +97,7 @@ reporter:status:key:two values_type:<type 'generator'>
 reporter:status:key:two count:1 type:<type 'str'>
 ----------
 
-Experiment 2 - A first trip into the clouds
+Experiment 3 - A first trip into the clouds
 Now we are going to run the word count demo on a Hadoop cluster.  The machine you are on has access to a very tiny Hadoop cluster (2 quad-core machines).  Run the following command to launch the job
 python run_wc.py 0
 
