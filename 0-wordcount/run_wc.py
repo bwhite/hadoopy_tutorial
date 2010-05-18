@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import hadoopy
 import time
 import sys
@@ -17,9 +18,13 @@ hadoopy.run_hadoop(input_dir, output_dir, 'wc.py')
 print('Job Done. See your output (encoded in typedbytes, so it will have binary stuff around it) [hadoop fs -cat %s/part-00000]' % (output_dir))
 
 # Dump from TypedBytes format
-count_thresh = [1, 10000, 5, 5][run_count]
+count_thresh = [1, 5000, 5, 5][run_count]
+should_sort = True
 print("I'll read the data and dump it in a nicer form, look inside this file to see how to do this.  Only counts >= %d that match this regex '^[a-zA-Z\-,\.]+$' with length > 2 are output" % (count_thresh))
-pairs = sorted(hadoopy.hdfs_cat_tb('%s/part-00000' % (output_dir)), lambda x,y: cmp(x[1], y[1]))
+pairs = hadoopy.hdfs_cat_tb('%s/part-00000' % (output_dir))
+if should_sort:
+    print("I'll now sort the output ascending by wordcount")
+    pairs = sorted(pairs, lambda x,y: cmp(x[1], y[1]))
 for key, val in pairs:
     if val >= count_thresh and re.search('^[a-zA-Z\-,\.]+$', key) and len(key) > 2:
         print('%s\t%s' % (key, val))

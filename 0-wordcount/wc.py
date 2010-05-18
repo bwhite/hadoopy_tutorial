@@ -12,7 +12,9 @@ def mapper(key, value):
         value: document as a string
 
     Yields:
-        A tuples in the form of (word, count), where word is a string and count is an int.
+        A tuple in the form of (key, value)
+        key: word (string)
+        value: count (int)
     """
     for word in value.split():
         yield word, 1
@@ -22,11 +24,13 @@ def reducer(key, values):
     """Take in an iterator of counts for a word, sum them, and return the sum.
 
     Args:
-        key: word
-        values: counts
+        key: word (string)
+        values: counts (int)
 
     Yields:
-        A tuple in the form of (word, count), where word is a string and count is an int.
+        A tuple in the form of (key, value)
+        key: word (string)
+        value: count (int)
     """
     accum = 0
     #hadoopy.status('key:%s values_type:%s\n' % (key, str(type(values))))

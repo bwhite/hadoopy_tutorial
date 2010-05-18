@@ -1,0 +1,36 @@
+Overview: In this exercise we will explore the basics of image processing with Hadoop including how to get images on HDFS and how to work with them.
+
+Experiment 0 - Run mean_image.py
+$ python mean_image.py
+will print the help documentation at the top of the file.  This is useful so that you can quickly see what the file does.
+----------
+Resize image and compute mean
+
+----------
+
+
+Experiment 1 - How do we get images into Hadoop?
+Input format background
+The default input format is a plain text file with each input on its own line and everything up until the first tab belonging to the key, with everything else belonging to the value.  This means that the tab and newline characters have a special meaning, the key must not contain a tab (though the value can, as only the first tab is used as a delimiter per line).  However, neither the value or key can use the newline as it signifies a new input.  As binary data (e.g., images) will likely have these characters, we will want to encode them in some way so that the same data is available but those two characters are avoided.  The simplest way to do this is base64 encode the entire image, which results in about 34% waste in storage space and a minor hit when it comes to decode performance.  This is the way to go if you want an encoding that will work everywhere and you have enough space.  One practical negative to this is that the user code needs to un-base64 the data, which is inelegant as it involves the serialization with the user code.
+
+
+Below are good and bad input lines for the Text input format, note that this is not an issue with the SequenceFiles described later.
+Example valid input lines with true (key, value) listed above them
+(sdfsdf,sdfsdf)
+sdfsdf	sdfsdf
+
+(a,sdsdf	sdfsdf	sdfsdf)
+a	sdsdf	sdfsdf	sdfsdf
+Example invalid input lines with true (key, value) listed above them
+(sdfsdf	abcd,ewq) it will read this as (sdfsdf,abcd  ewq)
+sdfsdf	abcd	ewq
+
+(sdfsdf,jlq\nqwe	  rjt) it will read this as two keys (sdfsdf,jlq) and (qwe,rjt)
+sdfsdf	jlq  
+qwe	  rjt
+
+
+A better solution is to use a format called SequenceFiles which allows binary key/value data to be represented by Hadoop.  There isn't a very good way to make these from scratch, so what we can do is start with the data loaded as base64, and have a simple conversion job that just decodes it and outputs as a SequenceFile.  Another term you will see is TypedBytes, this is an encoding scheme for basic types (tuples, lists, int, float, string, etc).  The file structure on Hadoop has several layers.  The outer layer is compression (if any) which may be in the form of gzip.  The next is the input format which is often text (line and tab oriented) or sequence files.  And finally the innermost layer is the data for the keys and values.  For text these are pure text, though you can impose your own encoding on it.  For sequence files this can be Java Hadoop Writables (objects that implement Writable) or a TypedByte (a Writable itself).  The TypedBytes input/ouput format is relevant because they allow you to use Hadoop Streaming with more complex types than just strings.  The default output format in Hadoopy is SequenceFiles/TypedBytes and the input format (Text or SequenceFiles) is detected automatically.  All of these settings can be easily modified in the run_hadoop function including adding in optional compression (may be very useful).
+
+In this excercise we will walk through the process of working with images in both the base64 format and the SequenceFile/TypedBytes format.
+

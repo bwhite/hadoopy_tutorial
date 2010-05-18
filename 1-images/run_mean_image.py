@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Runs the mean_image job
 Usage:
-python run_mean_image.py <hdfs_input>
+python run_mean_image.py
 """
 import hadoopy
 import time
@@ -22,6 +22,6 @@ def main(input_dir):
         Image.fromstring('L', key, val).save(fn)
 
 try:
-    main(sys.argv[1])
+    main('/user/hadoop-trainer/input-ex1-0')
 except IndexError:
     print(__doc__)

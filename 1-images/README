@@ -1,0 +1,15 @@
+Overview: In this exercise we will explore the basics of image processing with Hadoop.  We are assuming the images are already stored on HDFS in the form of <metadata, binary_jpeg_data> where we won't be using the metadata part for this excercise.
+
+Experiment 0 - Run mean_image.py
+$ python mean_image.py
+will print the help documentation at the top of the file.  This is useful so that you can quickly see what the file does.
+----------
+Resize image and compute mean
+
+----------
+
+Experiment 1 - Look inside mean_image.py
+Walk through the code and run it.
+The dataset used is ESP with 20K images and 250 MB.
+
+python run_mean_image.py
